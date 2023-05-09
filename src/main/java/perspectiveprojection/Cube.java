@@ -14,7 +14,7 @@ public class Cube {
 	private Point3D[] starts = new Point3D[12];
 	private Point3D[] ends = new Point3D[12];
 	
-	public Cube(double cubeSize) {
+	public Cube(double cubeSize) { //if cube size is 100, then the whole cube is 200x200x200, because it will be -100 to 100 around the offset that's sent to render.
 		this.cubeSize = cubeSize;
 		
 		//4 corners that are not touching each other all have 3 unique lines. Those define the whole cube.

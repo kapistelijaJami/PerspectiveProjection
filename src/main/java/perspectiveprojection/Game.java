@@ -15,7 +15,7 @@ public class Game extends GameLoop {
 	private Window window;
 	
 	//perspective good location when translate first, then rotate: loc (586.0, 691.0, 1202.0) yaw -26.0 pitch -153.0
-	private Camera cam = new Camera(new Point3D(586, 691, 1202), -26, 28); //(new Point3D(-400, 300, 500), -25, 28) works with ortographic (origo might be behind camera). Should be able to work with others with these settings as well
+	private Camera cam = new Camera(new Point3D(500, 700, 800)); //(new Point3D(-400, 300, 500), -25, 28) works with ortographic (origo might be behind camera). Should be able to work with others with these settings as well
 	private Cube cube = new Cube(100);
 	private Cube cameraObject = new Cube(20);
 	private Projection projection = new PerspectiveProjection(cam);
@@ -32,8 +32,8 @@ public class Game extends GameLoop {
 	public boolean shift = false;
 	public boolean ctrl = false;
 	
-	public Game() {
-		super(60);
+	public Game(int fps) {
+		super(fps);
 		window = new Window(1280, 720, "Perspective projection");
 	}
 	
@@ -52,40 +52,38 @@ public class Game extends GameLoop {
 	protected void update() {
 		double speed = 0.5;
 		if (left) {
-			cam.setYaw(cam.getYaw() - speed);
+			cam.turn(-1);
 		}
 		if (right) {
-			cam.setYaw(cam.getYaw() + speed);
+			cam.turn(1);
 		}
 		if (up) {
-			cam.setPitch(cam.getPitch() + speed);
+			cam.pitch(1);
 		}
 		if (down) {
-			cam.setPitch(cam.getPitch() - speed);
+			cam.pitch(-1);
 		}
 		
+		speed *= 4;
+		
 		if (w) {
-			cam.getLoc().z -= speed*4; //TODO: change that cam moves relative to camera orientation
+			cam.moveForward(speed);
 		}
 		if (s) {
-			cam.getLoc().z += speed*4;
+			cam.moveForward(-speed);
 		}
 		if (a) {
-			cam.getLoc().x -= speed*4;
+			cam.moveRight(-speed);
 		}
 		if (d) {
-			cam.getLoc().x += speed*4;
+			cam.moveRight(speed);
 		}
 		
 		if (shift) {
-			cam.getLoc().y += speed*4;
+			cam.moveUp(speed);
 		}
 		if (ctrl) {
-			cam.getLoc().y -= speed*4;
-		}
-		
-		if (left || right || up || down || w || s || a || d || shift || ctrl) {
-			updateProjection();
+			cam.moveUp(-speed);
 		}
 	}
 	
@@ -130,8 +128,8 @@ public class Game extends GameLoop {
 	public Camera getCamera()  {
 		return cam;
 	}
-	
-	public void updateProjection() {
-		projection.updateViewMatrix();
+
+	public void lookAt(Point3D point3D) {
+		cam.lookAt(point3D);
 	}
 }

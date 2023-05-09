@@ -13,6 +13,10 @@ public class Point3D {
 		this.z = z;
 	}
 	
+	public static Point3D getUP() {
+		return new Point3D(0, 1, 0);
+	}
+	
 	public Point3D copy() {
 		return new Point3D(x, y, z);
 	}
@@ -62,6 +66,17 @@ public class Point3D {
 		return this;
 	}
 	
+	public Point3D subtract(Point3D o) {
+		return subtract(o.x, o.y, o.z);
+	}
+	
+	public Point3D subtract(double x, double y, double z) {
+		this.x -= x;
+		this.y -= y;
+		this.z -= z;
+		return this;
+	}
+	
 	public Point3D mult(double mult) {
 		x *= mult;
 		y *= mult;
@@ -78,7 +93,7 @@ public class Point3D {
 					{0, Math.sin(rad), Math.cos(rad)}
 				});
 		
-		SimpleMatrix res = m.mult(new SimpleMatrix(new double[][] {{x}, {y}, {z}}));
+		SimpleMatrix res = m.mult(asSimpleMatrix());
 		return new Point3D(res.get(0), res.get(1), res.get(2));
 	}
 	
@@ -91,7 +106,7 @@ public class Point3D {
 					{-Math.sin(rad), 0, Math.cos(rad)}
 				});
 		
-		SimpleMatrix res = m.mult(new SimpleMatrix(new double[][] {{x}, {y}, {z}}));
+		SimpleMatrix res = m.mult(asSimpleMatrix());
 		return new Point3D(res.get(0), res.get(1), res.get(2));
 	}
 	
@@ -104,7 +119,30 @@ public class Point3D {
 					{0, 0, 1}
 				});
 		
-		SimpleMatrix res = m.mult(new SimpleMatrix(new double[][] {{x}, {y}, {z}}));
+		SimpleMatrix res = m.mult(asSimpleMatrix());
+		return new Point3D(res.get(0), res.get(1), res.get(2));
+	}
+	
+	public Point3D rotateAroundAxis(Point3D axis, double degrees) { //rotates with right hand rule (thumb towards axis and curled fingers are positive)
+		//Uses the Rodrigues' rotation formula
+		axis = axis.normalized();
+		
+		double cosTheta = Math.cos(Math.toRadians(degrees));
+		double sinTheta = Math.sin(Math.toRadians(degrees));
+		double oneMinusCosTheta = 1 - cosTheta;
+		
+		double ux = axis.x;
+		double uy = axis.y;
+		double uz = axis.z;
+		
+		SimpleMatrix rotationMatrix = new SimpleMatrix(
+				new double[][] {
+					{cosTheta + ux * ux * oneMinusCosTheta,			ux * uy * oneMinusCosTheta - uz * sinTheta,		ux * uz * oneMinusCosTheta + uy * sinTheta},
+					{uy * ux * oneMinusCosTheta + uz * sinTheta,	cosTheta + uy * uy * oneMinusCosTheta,			uy * uz * oneMinusCosTheta - ux * sinTheta},
+					{uz * ux * oneMinusCosTheta - uy * sinTheta,	uz * uy * oneMinusCosTheta + ux * sinTheta,		cosTheta + uz * uz * oneMinusCosTheta}
+				});
+		
+		SimpleMatrix res = rotationMatrix.mult(asSimpleMatrix());
 		return new Point3D(res.get(0), res.get(1), res.get(2));
 	}
 	
@@ -121,6 +159,10 @@ public class Point3D {
 			z /= magnitude;
 		}
 		return this;
+	}
+	
+	public Point3D normalized() {
+		return copy().normalize();
 	}
 	
 	public Point3D negate() {
@@ -142,10 +184,16 @@ public class Point3D {
 		return x * p.x + y * p.y + z * p.z;
 	}
 	
+	/**
+	 * Gets the perpendicular vector to both this and p.
+	 * According to right hand rule where index is this, middle is p, and result is thumb.
+	 * @param p
+	 * @return 
+	 */
 	public Point3D cross(Point3D p) {
 		return new Point3D(y * p.z - p.y * z, p.x * z - x * p.z, x * p.y - p.x * y);
 	}
-
+	
 	public boolean isOrigo() {
 		return x == 0 && y == 0 && z == 0;
 	}
@@ -163,5 +211,13 @@ public class Point3D {
 	public Point3D negateZ() {
 		this.z *= -1;
 		return this;
+	}
+	
+	public SimpleMatrix asSimpleMatrix() {
+		return new SimpleMatrix(new double[][] {{x}, {y}, {z}});
+	}
+	
+	public SimpleMatrix asHomogeneousSimpleMatrix() {
+		return new SimpleMatrix(new double[][] {{x}, {y}, {z}, {1}});
 	}
 }

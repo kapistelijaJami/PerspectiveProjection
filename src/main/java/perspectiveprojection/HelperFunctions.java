@@ -1,5 +1,8 @@
 package perspectiveprojection;
 
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
+import java.util.Locale;
 import org.ejml.simple.SimpleMatrix;
 
 public class HelperFunctions {
@@ -81,5 +84,51 @@ public class HelperFunctions {
 				});
 		
 		return rotateYThenX;
+	}
+	
+	public static void printSimpleMatrix(SimpleMatrix m) {
+		DecimalFormat df = new DecimalFormat("0.000", new DecimalFormatSymbols(Locale.US));
+		
+		for (int row = 0; row < m.numRows(); row++) {
+			System.out.print("[");
+			
+			for (int col = 0; col < m.numCols(); col++) {
+				double val = m.get(row, col);
+				int chars = getRequiredCharactersFromColumn(m, col);
+				if (val >= 0) {
+					System.out.print(" ");
+				}
+				System.out.print(" ");
+				
+				int digits = howManyDigits((int) val);
+				for (int i = 0; i < chars - digits; i++) {
+					System.out.print(" ");
+				}
+				
+				System.out.print(df.format(val));
+			}
+			System.out.println("  ]");
+		}
+		System.out.println();
+	}
+	
+	private static int getRequiredCharactersFromColumn(SimpleMatrix m, int col) {
+		int mostDigits = 0; //most digits in the integer part
+		
+		for (int row = 0; row < m.numRows(); row++) {
+			int val = Math.abs((int) m.get(row, col));
+			if (val > mostDigits) {
+				mostDigits = val;
+			}
+		}
+		
+		return howManyDigits(mostDigits);
+	}
+	
+	public static int howManyDigits(int i) {
+		if (i == 0) {
+			return 1;
+		}
+		return (int) Math.log10(i) + 1;
 	}
 }

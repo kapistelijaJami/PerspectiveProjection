@@ -6,15 +6,22 @@ import perspectiveprojection.projections.Projection;
 
 public class Main {
 	public static void main(String[] args) {
-		Camera cam = new Camera(1, 1, 1);
-		cam.setPitch(1);
-		cam.setYaw(0);
-		Projection projection = new PerspectiveProjection(cam);
+		/*Point3D p = new Point3D(0, 0, 1);
+		System.out.println(p);
+		p = p.rotateAroundAxis(new Point3D(0, 1, 0), 5);
+		System.out.println(p);*/
+		
+		/*Camera cam = new Camera(1, 1, 1);
+		//Projection projection = new PerspectiveProjection(cam);
+		Point3D p = new Point3D(10, 10, 10);
+		cam.lookAt(p);
 		System.out.println("viewMatrix:");
-		System.out.println(projection.getViewMatrix());
+		SimpleMatrix viewMatrix = cam.getViewMatrix();
+		HelperFunctions.printSimpleMatrix(viewMatrix);
 		
-		new Game().start();
+		HelperFunctions.printSimpleMatrix(viewMatrix.mult(p.asHomogeneousSimpleMatrix()));*/
 		
+		new Game(60).start();
 		
 		//testSimpleMatrix1(); //See this to know which way matrix multiplication is done in this library
 		//testSimpleMatrix2();
@@ -34,7 +41,8 @@ public class Main {
 				});
 		
 		SimpleMatrix res = firstMatrix.mult(secondMatrix); //Multiplication is first on the left and second on the right
-		System.out.println("res: \n" + res);
+		System.out.println("res:");
+		HelperFunctions.printSimpleMatrix(res);
 		//So multiplication is first matrix row times second matrix column etc.
 		
 		//It's also marked as first * second in math. The SECOND matrix is the transformation which is done FIRST, because they are read right to left.
@@ -52,11 +60,13 @@ public class Main {
 		
 		//So A * B:
 		SimpleMatrix v1 = new SimpleMatrix(new double[][]{{2}, {5}});
-		System.out.println("This: " + A.mult(B.mult(v1))); //B * vector first, then A * the result.
+		System.out.println("This:");
+		HelperFunctions.printSimpleMatrix(A.mult(B.mult(v1))); //B * vector first, then A * the result.
 		
 		//equals:
 		SimpleMatrix v2 = new SimpleMatrix(new double[][]{{2}, {5}});
-		System.out.println("Equals this: " + A.mult(B).mult(v2)); //Is the same as A * B, and then the result * the vector.
+		System.out.println("Equals this:");
+		HelperFunctions.printSimpleMatrix(A.mult(B).mult(v2)); //Is the same as A * B, and then the result * the vector.
 	}
 	
 	public static void testSimpleMatrix2() {
@@ -64,11 +74,11 @@ public class Main {
 		Point3D p = new Point3D(0, 0, 1);
 		int y = 45;
 		int x = 45;
-		System.out.println(p.rotatedY(45).rotatedX(45));
+		System.out.println(p.rotatedY(45).rotatedX(45) + "\n");
 		
 		SimpleMatrix v1 = new SimpleMatrix(new double[][]{{0}, {0}, {1}, {1}});
 		
-		System.out.println(HelperFunctions.getRotateYThenXMatrix(x, y).mult(v1));
+		HelperFunctions.printSimpleMatrix(HelperFunctions.getRotateYThenXMatrix(x, y).mult(v1));
 		
 		
 		//How simpleMatrix is set up:
@@ -78,7 +88,8 @@ public class Main {
 					{7},
 					{1}
 				});
-		System.out.println("vec: " + v);
+		System.out.println("vec:");
+		HelperFunctions.printSimpleMatrix(v);
 		
 		SimpleMatrix mat = new SimpleMatrix(new double[][] {
 					{  1,  2,  3,  4 }, //this represents a row in a resulting matrix as well
@@ -86,8 +97,10 @@ public class Main {
 					{  9, 10, 11, 12 },
 					{ 13, 14, 15, 16 }
 				});
-		System.out.println("mat: " + mat);
+		System.out.println("mat:");
+		HelperFunctions.printSimpleMatrix(mat);
 		
-		System.out.println("mat.mult(vec): " + mat.mult(v));
+		System.out.println("mat.mult(vec):");
+		HelperFunctions.printSimpleMatrix(mat.mult(v));
 	}
 }

@@ -17,7 +17,7 @@ public class OldPerspectiveProjection extends Projection {
 	@Override
 	public Point2D project(Point3D p) {
 		SimpleMatrix v = new SimpleMatrix(new double[][]{{p.x}, {p.y}, {p.z}, {1}});
-		SimpleMatrix res = viewMatrix.mult(v);
+		SimpleMatrix res = cam.getViewMatrix().mult(v);
 		p = new Point3D(res.get(0), res.get(1), res.get(2));
 
 		double x = p.x * D / (D - p.z);

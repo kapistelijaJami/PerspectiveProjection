@@ -10,9 +10,9 @@ import javax.swing.event.MouseInputListener;
 
 public class KeyInput implements MouseInputListener, MouseWheelListener, KeyListener {
 	private Game game;
-	private Point clickLoc; //where was the click location of the mouse relative to the window
+	/*private Point clickLoc; //where was the click location of the mouse relative to the window
 	private Point2D clickRot;
-	private Point3D clickPos; //what position the game was at when the click happened
+	private Point3D clickPos; //what position the game was at when the click happened*/
 	
 	public KeyInput(Game game) {
 		this.game = game;
@@ -26,9 +26,9 @@ public class KeyInput implements MouseInputListener, MouseWheelListener, KeyList
 	@Override
 	public void mousePressed(MouseEvent e) {
 		Camera cam = game.getCamera();
-		clickRot = new Point2D(cam.getYaw(), cam.getPitch());
+		/*clickRot = new Point2D(cam.getYaw(), cam.getPitch());
 		clickLoc = e.getPoint();
-		clickPos = cam.getLoc().copy();
+		clickPos = cam.getLoc().copy();*/
 	}
 	
 	@Override
@@ -48,7 +48,7 @@ public class KeyInput implements MouseInputListener, MouseWheelListener, KeyList
 	
 	@Override
 	public void mouseDragged(MouseEvent e) {
-		Point p = e.getPoint();
+		/*Point p = e.getPoint();
 		Point diff = new Point(p.x - clickLoc.x, p.y - clickLoc.y);
 		Camera cam = game.getCamera();
 		
@@ -61,7 +61,7 @@ public class KeyInput implements MouseInputListener, MouseWheelListener, KeyList
 		}
 		
 		game.updateProjection();
-		mousePressed(e); //resets the click locations for this event, ready to receive the next drag event
+		mousePressed(e); //resets the click locations for this event, ready to receive the next drag event*/
 	}
 	
 	private boolean checkMouseButtonMask(MouseEvent e, int mask) {
@@ -77,8 +77,9 @@ public class KeyInput implements MouseInputListener, MouseWheelListener, KeyList
 	public void mouseWheelMoved(MouseWheelEvent e) {
 		//game.zoom *= e.getPreciseWheelRotation() == -1 ? 1.5 : 0.75;
 		Camera cam = game.getCamera();
-		cam.getLoc().z += 50 * e.getPreciseWheelRotation();
-		game.updateProjection();
+		cam.moveForward(50 * e.getPreciseWheelRotation());
+		//cam.getLoc().z += 50 * e.getPreciseWheelRotation();
+		//game.updateProjection();
 	}
 	
 	@Override
@@ -122,6 +123,9 @@ public class KeyInput implements MouseInputListener, MouseWheelListener, KeyList
 				break;
 			case KeyEvent.VK_CONTROL:
 				game.ctrl = true;
+				break;
+			case KeyEvent.VK_L:
+				game.lookAt(new Point3D(100, 100, 100));
 				break;
 		}
 	}

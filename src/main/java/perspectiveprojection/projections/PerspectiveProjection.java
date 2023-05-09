@@ -12,8 +12,8 @@ public class PerspectiveProjection extends Projection {
 	public PerspectiveProjection(Camera cam) {
 		super(cam);
 		
-		double fov = 60; // def: 90
-		double aspect = 9.0 / 16.0;
+		double fov = 60; // def: 90. This is probably vertical fov
+		double aspect = 9.0 / 16.0; //for some reason this is height / width
 		double zNear = 0.1;
 		double zFar = 10000;
 		double fovMult = 1.0 / Math.tan(Math.toRadians(fov / 2.0));
@@ -22,20 +22,20 @@ public class PerspectiveProjection extends Projection {
 		System.out.println("lambda: " + lambda + " zNear: " + zNear);
 		
 		projectionMatrix = new SimpleMatrix(new double[][] {
-					{ aspect * fovMult,       0,      0,               0 },
+					{ aspect * fovMult,       0,      0,               0 }, //chatgpt had the first one negated in one example
 					{                0, fovMult,      0,               0 },
 					{                0,       0, lambda, -lambda * zNear },
 					{                0,       0,      1,               0 }
 				});
 	}
-
+	
 	@Override
 	public Point2D project(Point3D p) {
 		//SimpleMatrix wholeProjection = projectionMatrix.mult(viewMatrix);
 		
-		SimpleMatrix v = new SimpleMatrix(new double[][]{{p.x}, {p.y}, {p.z}, {1}});
+		SimpleMatrix v = p.asHomogeneousSimpleMatrix();
 		
-		SimpleMatrix res = projectionMatrix.mult(viewMatrix.mult(v));
+		SimpleMatrix res = projectionMatrix.mult(cam.getViewMatrix().mult(v));
 		Point3D result = new Point3D(res.get(0), res.get(1), res.get(2));
 		double w = res.get(3);
 		
