@@ -50,15 +50,14 @@ public class Cube {
 	public void render(Graphics2D g, Point3D offset, Projection projection) {
 		//color this corner red:
 		Point3D vertex = new Point3D(1, 1, 1);
-		vertex.mult(cubeSize);
+		vertex = vertex.mult(cubeSize);
 		
 		for (int i = 0; i < starts.length; i++) {
 			Point3D start = starts[i];
 			Point3D end = ends[i];
 			
-			Point2D[] projected = projection.projectPoints(start.copy().add(offset.x, offset.y, offset.z), end.copy().add(offset.x, offset.y, offset.z));
-			Point s = projected[0].asPoint();
-			Point e = projected[1].asPoint();
+			Point s = projection.project(start.add(offset)).asPoint();
+			Point e = projection.project(end.add(offset)).asPoint();
 			
 			Paint paint = new GradientPaint(s, Color.white, e, Color.white);
 			if (start.equals(vertex)) {

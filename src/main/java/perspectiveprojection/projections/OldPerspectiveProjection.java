@@ -24,4 +24,9 @@ public class OldPerspectiveProjection extends Projection {
 		double y = p.y * D / (D - p.z);
 		return new Point2D(x, -y);
 	}
+
+	@Override
+	public SimpleMatrix getProjectionMatrix() {
+		return null;
+	}
 }

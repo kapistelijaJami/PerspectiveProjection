@@ -3,9 +3,11 @@ package perspectiveprojection;
 import org.ejml.simple.SimpleMatrix;
 
 public class Point3D {
-	public double x, y, z;
+	public double x, y, z; //Mostly used as immutable unless specified otherwise.
 	
-	public Point3D() {}
+	public Point3D() {
+		this(0, 0, 0);
+	}
 	
 	public Point3D(double x, double y, double z) {
 		this.x = x;
@@ -60,10 +62,7 @@ public class Point3D {
 	}
 	
 	public Point3D add(double x, double y, double z) {
-		this.x += x;
-		this.y += y;
-		this.z += z;
-		return this;
+		return new Point3D(this.x + x, this.y + y, this.z + z);
 	}
 	
 	public Point3D subtract(Point3D o) {
@@ -71,17 +70,18 @@ public class Point3D {
 	}
 	
 	public Point3D subtract(double x, double y, double z) {
-		this.x -= x;
-		this.y -= y;
-		this.z -= z;
-		return this;
+		return new Point3D(this.x - x, this.y - y, this.z - z);
 	}
 	
 	public Point3D mult(double mult) {
-		x *= mult;
-		y *= mult;
-		z *= mult;
-		return this;
+		return new Point3D(this.x * mult, this.y * mult, this.z * mult);
+	}
+	
+	public Point3D divide(double w) {
+		if (w == 0) {
+			return this;
+		}
+		return new Point3D(this.x / w, this.y / w, this.z / w);
 	}
 	
 	public Point3D rotatedX(double degrees) { //rotates with right hand rule (thumb towards x-axis and curled fingers are positive)
@@ -93,7 +93,7 @@ public class Point3D {
 					{0, Math.sin(rad), Math.cos(rad)}
 				});
 		
-		SimpleMatrix res = m.mult(asSimpleMatrix());
+		SimpleMatrix res = m.mult(asMatrix());
 		return new Point3D(res.get(0), res.get(1), res.get(2));
 	}
 	
@@ -106,7 +106,7 @@ public class Point3D {
 					{-Math.sin(rad), 0, Math.cos(rad)}
 				});
 		
-		SimpleMatrix res = m.mult(asSimpleMatrix());
+		SimpleMatrix res = m.mult(asMatrix());
 		return new Point3D(res.get(0), res.get(1), res.get(2));
 	}
 	
@@ -119,7 +119,7 @@ public class Point3D {
 					{0, 0, 1}
 				});
 		
-		SimpleMatrix res = m.mult(asSimpleMatrix());
+		SimpleMatrix res = m.mult(asMatrix());
 		return new Point3D(res.get(0), res.get(1), res.get(2));
 	}
 	
@@ -142,7 +142,7 @@ public class Point3D {
 					{uz * ux * oneMinusCosTheta - uy * sinTheta,	uz * uy * oneMinusCosTheta + ux * sinTheta,		cosTheta + uz * uz * oneMinusCosTheta}
 				});
 		
-		SimpleMatrix res = rotationMatrix.mult(asSimpleMatrix());
+		SimpleMatrix res = rotationMatrix.mult(asMatrix());
 		return new Point3D(res.get(0), res.get(1), res.get(2));
 	}
 	
@@ -151,6 +151,12 @@ public class Point3D {
 		return HelperFunctions.pythagoras3D(x, y, z);
 	}
 	
+	/**
+	 * Normalizes the vector, so its length is 1.
+	 * Updates this point, doesn't create a copy.
+	 * Returns this.
+	 * @return 
+	 */
 	public Point3D normalize() {
 		double magnitude = magnitude();
 		if (magnitude > 0) {
@@ -162,9 +168,16 @@ public class Point3D {
 	}
 	
 	public Point3D normalized() {
-		return copy().normalize();
+		double magnitude = magnitude();
+		return new Point3D(x / magnitude, y / magnitude, z / magnitude);
 	}
 	
+	/**
+	 * Negates the vector to point to the opposite direction.
+	 * Updates this point, doesn't create a copy.
+	 * Returns this.
+	 * @return 
+	 */
 	public Point3D negate() {
 		x *= -1;
 		y *= -1;
@@ -177,7 +190,7 @@ public class Point3D {
 	}
 	
 	public Point3D normalWithUp() {
-		return cross(new Point3D(0, 1, 0)).normalize();
+		return cross(new Point3D(0, 1, 0)).normalized();
 	}
 	
 	public double dot(Point3D p) {
@@ -199,25 +212,30 @@ public class Point3D {
 	}
 	
 	public Point3D negateX() {
-		this.x *= -1;
-		return this;
+		return new Point3D(x * -1, y, z);
 	}
 	
 	public Point3D negateY() {
-		this.y *= -1;
-		return this;
+		return new Point3D(x, y * -1, z);
 	}
 	
 	public Point3D negateZ() {
-		this.z *= -1;
-		return this;
+		return new Point3D(x, y, z * -1);
 	}
 	
-	public SimpleMatrix asSimpleMatrix() {
+	public double distanceFrom(Point3D p) {
+		return HelperFunctions.distance3D(this, p);
+	}
+	
+	public SimpleMatrix asMatrix() {
 		return new SimpleMatrix(new double[][] {{x}, {y}, {z}});
 	}
 	
-	public SimpleMatrix asHomogeneousSimpleMatrix() {
+	public SimpleMatrix asHomogeneousMatrix() {
 		return new SimpleMatrix(new double[][] {{x}, {y}, {z}, {1}});
+	}
+	
+	public static Point3D fromMatrix(SimpleMatrix m) {
+		return new Point3D(m.get(0), m.get(1), m.get(2));
 	}
 }

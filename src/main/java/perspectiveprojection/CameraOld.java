@@ -35,7 +35,7 @@ public class CameraOld {
 	}
 	
 	public Point3D getDir() {
-		return new Point3D(0, 0, 1).rotatedY(yaw).rotatedX(pitch).normalize();
+		return new Point3D(0, 0, 1).rotatedY(yaw).rotatedX(pitch).normalized();
 	}
 	
 	public double getYaw() {
@@ -80,6 +80,6 @@ public class CameraOld {
 	}
 	
 	public final void lookAt(Point3D point) {
-		setDir(new Point3D(point.x - loc.x, point.y - loc.y, point.z - loc.z).normalize());
+		setDir(new Point3D(point.x - loc.x, point.y - loc.y, point.z - loc.z).normalized());
 	}
 }

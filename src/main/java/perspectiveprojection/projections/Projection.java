@@ -30,9 +30,9 @@ public abstract class Projection {
 		Point[] projectedPoints = new Point[points.length];
 		
 		for (int i = 0; i < points.length; i++) {
-			Point2D p = project(points[i]);
-			projectedPoints[i] = new Point((int) p.x, (int) p.y);
+			projectedPoints[i] = project(points[i]).asPoint();
 		}
+		
 		return projectedPoints;
 	}
 	
@@ -78,4 +78,6 @@ public abstract class Projection {
 		//			{                          -loc.x,                          -loc.y,         -loc.z,  1 }
 		//		});
 	}*/
+	
+	public abstract SimpleMatrix getProjectionMatrix();
 }

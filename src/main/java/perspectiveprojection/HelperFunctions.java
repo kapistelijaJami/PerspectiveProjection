@@ -14,8 +14,16 @@ public class HelperFunctions {
 		return Math.sqrt(x * x + y * y + z * z);
 	}
 	
+	public static double distance(Point2D start, Point2D to) {
+		return distance(start.x, start.y, to.x, to.y);
+	}
+	
 	public static double distance(double startX, double startY, double toX, double toY) {
 		return pythagoras(toX - startX, toY - startY);
+	}
+	
+	public static double distance3D(Point3D start, Point3D to) {
+		return distance3D(start.x, start.y, start.z, to.x, to.y, to.z);
 	}
 	
 	public static double distance3D(double startX, double startY, double startZ, double toX, double toY, double toZ) {
@@ -86,7 +94,7 @@ public class HelperFunctions {
 		return rotateYThenX;
 	}
 	
-	public static void printSimpleMatrix(SimpleMatrix m) {
+	public static void printMatrix(SimpleMatrix m) {
 		DecimalFormat df = new DecimalFormat("0.000", new DecimalFormatSymbols(Locale.US));
 		
 		for (int row = 0; row < m.numRows(); row++) {
@@ -94,6 +102,9 @@ public class HelperFunctions {
 			
 			for (int col = 0; col < m.numCols(); col++) {
 				double val = m.get(row, col);
+				if (val == 0) {
+					val = 0; //sometimes val was -0.000, this fixes it.
+				}
 				int chars = getRequiredCharactersFromColumn(m, col);
 				if (val >= 0) {
 					System.out.print(" ");

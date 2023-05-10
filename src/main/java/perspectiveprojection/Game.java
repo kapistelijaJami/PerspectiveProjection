@@ -15,10 +15,12 @@ public class Game extends GameLoop {
 	private Window window;
 	
 	//perspective good location when translate first, then rotate: loc (586.0, 691.0, 1202.0) yaw -26.0 pitch -153.0
-	private Camera cam = new Camera(new Point3D(500, 700, 800)); //(new Point3D(-400, 300, 500), -25, 28) works with ortographic (origo might be behind camera). Should be able to work with others with these settings as well
+	//private Camera cam = new Camera(new Point3D(500, 700, 800)); //(new Point3D(-400, 300, 500), -25, 28) works with ortographic (origo might be behind camera). Should be able to work with others with these settings as well
+	private Camera cam = new Camera(new Point3D(800, 800, 800));
 	private Cube cube = new Cube(100);
 	private Cube cameraObject = new Cube(20);
-	private Projection projection = new PerspectiveProjection(cam);
+	private Projection projection = new PerspectiveProjection(cam, "");
+	//private Projection projection = new OrtographicProjection(cam);
 	
 	public boolean up = false;
 	public boolean down = false;
@@ -46,16 +48,20 @@ public class Game extends GameLoop {
 		canvas.addMouseListener(input);
 		canvas.addMouseMotionListener(input);
 		canvas.addMouseWheelListener(input);
+		
+		HelperFunctions.printMatrix(projection.getProjectionMatrix());
 	}
 	
 	@Override
 	protected void update() {
 		double speed = 0.5;
 		if (left) {
-			cam.turn(-1);
+			//cam.turn(-1);
+			cam.turn2(-1);
 		}
 		if (right) {
-			cam.turn(1);
+			//cam.turn(1);
+			cam.turn2(1);
 		}
 		if (up) {
 			cam.pitch(1);

@@ -17,8 +17,9 @@ public class Camera {
 	}
 	
 	public Camera(Point3D loc) {
+		//Column vectors disregarding the last row are right, up, forward and location negated.
 		viewMatrix = new SimpleMatrix(new double[][] {
-					{ -1, 0, 0, -loc.x }, //x is negated because it's the right from the camera's perspective
+					{  1, 0, 0, -loc.x }, //x is negated because it's the right from the camera's perspective (I think it has to be left)
 					{  0, 1, 0, -loc.y },
 					{  0, 0, 1, -loc.z },
 					{  0, 0, 0,      1 }
@@ -33,7 +34,13 @@ public class Camera {
 		return new Point3D(-viewMatrix.get(0, 3), -viewMatrix.get(1, 3), -viewMatrix.get(2, 3));
 	}
 	
+	//AS COLUMN VECTORS
+	/*@Deprecated
 	public Point3D getRight() {
+		return new Point3D(viewMatrix.get(0, 0), viewMatrix.get(1, 0), viewMatrix.get(2, 0));
+	}
+	
+	public Point3D getLeft() {
 		return new Point3D(viewMatrix.get(0, 0), viewMatrix.get(1, 0), viewMatrix.get(2, 0));
 	}
 	
@@ -45,20 +52,65 @@ public class Camera {
 		return new Point3D(viewMatrix.get(0, 2), viewMatrix.get(1, 2), viewMatrix.get(2, 2));
 	}
 	
-	public void setLoc(Point3D loc) {
-		viewMatrix.setColumn(3, 0, -loc.x, -loc.y, -loc.z);
+	@Deprecated
+	private void setRight(Point3D right) {
+		viewMatrix.setColumn(0, 0, right.x, right.y, right.z);
 	}
 	
-	private void setForward(Point3D forward) {
-		viewMatrix.setColumn(2, 0, forward.x, forward.y, forward.z);
+	private void setLeft(Point3D left) {
+		viewMatrix.setColumn(0, 0, left.x, left.y, left.z);
 	}
 	
 	private void setUp(Point3D up) {
 		viewMatrix.setColumn(1, 0, up.x, up.y, up.z);
 	}
 	
+	private void setForward(Point3D forward) {
+		viewMatrix.setColumn(2, 0, forward.x, forward.y, forward.z);
+	}*/
+	
+	
+	//AS ROW VECTORS (this should be correct, since as column/basis vectors they transform unit vectors to these bases,
+	//which means that points will move to the wrong direction. It has to be the inverse, and transpose is inverse of rotation matrix (I think))
+	//But I probably need this forward to point to the positive Z instead of the direction of the camera, which is negative Z,
+	//otherwise the camera turns everything around anyway and we will end up looking towards positive Z.
+	//(Then the left has to change as well I think)
+	@Deprecated
+	public Point3D getRight() {
+		return new Point3D(viewMatrix.get(0, 0), viewMatrix.get(0, 1), viewMatrix.get(0, 2));
+	}
+	
+	public Point3D getLeft() {
+		return new Point3D(viewMatrix.get(0, 0), viewMatrix.get(0, 1), viewMatrix.get(0, 2));
+	}
+	
+	public Point3D getUp() {
+		return new Point3D(viewMatrix.get(1, 0), viewMatrix.get(1, 1), viewMatrix.get(1, 2));
+	}
+	
+	public Point3D getForward() {
+		return new Point3D(viewMatrix.get(2, 0), viewMatrix.get(2, 1), viewMatrix.get(2, 2));
+	}
+	
+	@Deprecated
 	private void setRight(Point3D right) {
-		viewMatrix.setColumn(0, 0, right.x, right.y, right.z);
+		viewMatrix.setRow(0, 0, right.x, right.y, right.z);
+	}
+	
+	private void setLeft(Point3D left) {
+		viewMatrix.setRow(0, 0, left.x, left.y, left.z);
+	}
+	
+	private void setUp(Point3D up) {
+		viewMatrix.setRow(1, 0, up.x, up.y, up.z);
+	}
+	
+	private void setForward(Point3D forward) {
+		viewMatrix.setRow(2, 0, forward.x, forward.y, forward.z);
+	}
+	
+	public void setLoc(Point3D loc) {
+		viewMatrix.setColumn(3, 0, -loc.x, -loc.y, -loc.z);
 	}
 	
 	/**
@@ -68,6 +120,7 @@ public class Camera {
 	 */
 	public void moveForward(double amount) {
 		setLoc(getLoc().add(getForward().mult(amount)));
+		System.out.println(getLoc());
 	}
 	
 	/**
@@ -84,7 +137,7 @@ public class Camera {
 	 * @param amount 
 	 */
 	public void moveRight(double amount) {
-		setLoc(getLoc().add(getRight().mult(amount)));
+		setLoc(getLoc().add(getLeft().mult(-amount)));
 	}
 	
 	/**
@@ -98,6 +151,11 @@ public class Camera {
 		setDir(forward.rotateAroundAxis(up, -amount)); //amount negated so that positive is to the right
 	}
 	
+	public void turn2(double amount) {
+		Point3D forward = getForward();
+		setDir(forward.rotatedY(-amount));
+	}
+	
 	/**
 	 * Turns vertically amount degrees.
 	 * Positive to the up, negative to the down.
@@ -105,8 +163,8 @@ public class Camera {
 	 */
 	public void pitch(double amount) {
 		Point3D forward = getForward();
-		Point3D right = getRight();
-		setDir(forward.rotateAroundAxis(right, amount));
+		Point3D left = getLeft();
+		setDir(forward.rotateAroundAxis(left, -amount)); //amount negated so that positive is to up
 	}
 	
 	/**
@@ -118,15 +176,15 @@ public class Camera {
 		forward = forward.normalized();
 		setForward(forward);
 		
-		Point3D right = forward.cross(getUp()).normalize();
-		setRight(right);
+		Point3D left = getUp().cross(forward).normalized();
+		setLeft(left);
 		
-		Point3D up = right.cross(forward).normalize();
+		Point3D up = forward.cross(left).normalized();
 		setUp(up);
 	}
 	
 	public final void lookAt(Point3D point) {
-		Point3D newDir = point.copy().subtract(getLoc()).normalize();
+		Point3D newDir = point.subtract(getLoc()).normalized();
 		setDir(newDir);
 	}
 	
