@@ -3,10 +3,17 @@ package perspectiveprojection;
 import org.ejml.simple.SimpleMatrix;
 
 public class Camera {
-	private SimpleMatrix viewMatrix;	//This contains the location and the orientation + it can be used straight in the projection calculation.
-										//4x4 matrix. The first 3 column vectors without the last row are the right, up and forward vectors.
-										//The last column without the last row is the location negated (because in projection you need to
-										//translate points by subtracting the location of the camera to set the new origo where the camera is).
+	private Point3D location;
+	private SimpleMatrix viewMatrix;	//This contains the information how points are translated and oriented (in that order), so that they
+										//are being viewed from the camera's pov, it can be used straight in the projection calculation.
+										//4x4 matrix. The first 3 elements of the first 3 row vectors are the -left, up and -forward vectors.
+										//In projection you need to translate points by subtracting the location of the camera to set the new
+										//origo where the camera is and then rotate the view so that the camera points straight to either +Z or -Z).
+										//The last column does not have the correct negated location information for the camera, because the translate
+										//in this matrix is applied first and then the rotation. The translate information will be combined in the
+										//last column with the rotation information, and wont match the coordinates anymore.
+										//We could either extract the coordinates from the matrix by inverse rotation, or keep track of
+										//them separately.
 	
 	public Camera() {
 		this(new Point3D());
@@ -17,12 +24,16 @@ public class Camera {
 	}
 	
 	public Camera(Point3D loc) {
-		//Column vectors disregarding the last row are right, up, forward and location negated.
+		location = loc;
+		
+		//Row vectors disregarding the last column are -left, up, -forward and last column is -location.
+		//This is the inverse matrix of how you would position the camera from model space to world space.
+		//Inverse of a rotation matrix is same as transpose, that's why they are row vectors, instead of column.
 		viewMatrix = new SimpleMatrix(new double[][] {
-					{  1, 0, 0, -loc.x }, //x is negated because it's the right from the camera's perspective (I think it has to be left)
-					{  0, 1, 0, -loc.y },
-					{  0, 0, 1, -loc.z },
-					{  0, 0, 0,      1 }
+					{ -1, 0,  0, -loc.x },
+					{  0, 1,  0, -loc.y },
+					{  0, 0, -1, -loc.z },
+					{  0, 0,  0,      1 }
 				});
 		
 		if (!loc.isOrigo()) {
@@ -31,57 +42,14 @@ public class Camera {
 	}
 	
 	public Point3D getLoc() {
-		return new Point3D(-viewMatrix.get(0, 3), -viewMatrix.get(1, 3), -viewMatrix.get(2, 3));
+		return location;
 	}
-	
-	//AS COLUMN VECTORS
-	/*@Deprecated
-	public Point3D getRight() {
-		return new Point3D(viewMatrix.get(0, 0), viewMatrix.get(1, 0), viewMatrix.get(2, 0));
-	}
-	
-	public Point3D getLeft() {
-		return new Point3D(viewMatrix.get(0, 0), viewMatrix.get(1, 0), viewMatrix.get(2, 0));
-	}
-	
-	public Point3D getUp() {
-		return new Point3D(viewMatrix.get(0, 1), viewMatrix.get(1, 1), viewMatrix.get(2, 1));
-	}
-	
-	public Point3D getForward() {
-		return new Point3D(viewMatrix.get(0, 2), viewMatrix.get(1, 2), viewMatrix.get(2, 2));
-	}
-	
-	@Deprecated
-	private void setRight(Point3D right) {
-		viewMatrix.setColumn(0, 0, right.x, right.y, right.z);
-	}
-	
-	private void setLeft(Point3D left) {
-		viewMatrix.setColumn(0, 0, left.x, left.y, left.z);
-	}
-	
-	private void setUp(Point3D up) {
-		viewMatrix.setColumn(1, 0, up.x, up.y, up.z);
-	}
-	
-	private void setForward(Point3D forward) {
-		viewMatrix.setColumn(2, 0, forward.x, forward.y, forward.z);
-	}*/
-	
 	
 	//AS ROW VECTORS (this should be correct, since as column/basis vectors they transform unit vectors to these bases,
 	//which means that points will move to the wrong direction. It has to be the inverse, and transpose is inverse of rotation matrix (I think))
-	//But I probably need this forward to point to the positive Z instead of the direction of the camera, which is negative Z,
-	//otherwise the camera turns everything around anyway and we will end up looking towards positive Z.
-	//(Then the left has to change as well I think)
-	@Deprecated
-	public Point3D getRight() {
-		return new Point3D(viewMatrix.get(0, 0), viewMatrix.get(0, 1), viewMatrix.get(0, 2));
-	}
-	
+	//Forward and left will be negated for the matrix so that the view will end up pointing to the negative Z.
 	public Point3D getLeft() {
-		return new Point3D(viewMatrix.get(0, 0), viewMatrix.get(0, 1), viewMatrix.get(0, 2));
+		return new Point3D(viewMatrix.get(0, 0), viewMatrix.get(0, 1), viewMatrix.get(0, 2)).negate();
 	}
 	
 	public Point3D getUp() {
@@ -89,28 +57,45 @@ public class Camera {
 	}
 	
 	public Point3D getForward() {
-		return new Point3D(viewMatrix.get(2, 0), viewMatrix.get(2, 1), viewMatrix.get(2, 2));
-	}
-	
-	@Deprecated
-	private void setRight(Point3D right) {
-		viewMatrix.setRow(0, 0, right.x, right.y, right.z);
+		return new Point3D(viewMatrix.get(2, 0), viewMatrix.get(2, 1), viewMatrix.get(2, 2)).negate();
 	}
 	
 	private void setLeft(Point3D left) {
-		viewMatrix.setRow(0, 0, left.x, left.y, left.z);
+		viewMatrix.setRow(0, 0, -left.x, -left.y, -left.z);
+		updateMatrix();
 	}
 	
 	private void setUp(Point3D up) {
 		viewMatrix.setRow(1, 0, up.x, up.y, up.z);
+		updateMatrix();
 	}
 	
 	private void setForward(Point3D forward) {
-		viewMatrix.setRow(2, 0, forward.x, forward.y, forward.z);
+		viewMatrix.setRow(2, 0, -forward.x, -forward.y, -forward.z);
+		updateMatrix();
 	}
 	
 	public void setLoc(Point3D loc) {
-		viewMatrix.setColumn(3, 0, -loc.x, -loc.y, -loc.z);
+		location = loc;
+		updateMatrix();
+	}
+	
+	private void updateMatrix() {
+		//The top left 3x3 submatrix won't change when location changes, but for the last column,
+		//we need to also apply the rotation, because it happens after the translation.
+		//We can do so by just calculating the last column manually with dot product.
+		//Also if the rotation changes, we still have to calculate the last column even though location didn't change.
+		
+		//a.x * -b.x + a.y * -b.y + a.z * -b.z
+		//is the same result as
+		//-(a.x * b.x + a.y * b.y + a.z * b.z)
+		//So a.dot(-b) = -(a.dot(b))
+		
+		double x = -Point3D.fromMatrix(viewMatrix.extractVector(true, 0)).dot(location);
+		double y = -Point3D.fromMatrix(viewMatrix.extractVector(true, 1)).dot(location);
+		double z = -Point3D.fromMatrix(viewMatrix.extractVector(true, 2)).dot(location);
+		
+		viewMatrix.setColumn(3, 0, x, y, z);
 	}
 	
 	/**
@@ -120,7 +105,6 @@ public class Camera {
 	 */
 	public void moveForward(double amount) {
 		setLoc(getLoc().add(getForward().mult(amount)));
-		System.out.println(getLoc());
 	}
 	
 	/**
@@ -151,9 +135,9 @@ public class Camera {
 		setDir(forward.rotateAroundAxis(up, -amount)); //amount negated so that positive is to the right
 	}
 	
-	public void turn2(double amount) {
+	public void turnRelativeToWorld(double amount) { //not sure if these are different atm after I changed the setDir use UP vector.
 		Point3D forward = getForward();
-		setDir(forward.rotatedY(-amount));
+		setDir(forward.rotatedY(-amount)); //This seems to move slower though
 	}
 	
 	/**
@@ -164,6 +148,14 @@ public class Camera {
 	public void pitch(double amount) {
 		Point3D forward = getForward();
 		Point3D left = getLeft();
+		
+		Point3D UP = Point3D.getUP();
+		if (amount < 0) { //pitching down, so we want DOWN vector instead
+			UP.negate();
+		}
+		double maxAngle = Math.max(0, Point3D.angleBetweenUnitVectors(forward, UP) - 1); //Stays 1 degree off from vertical
+		amount = HelperFunctions.clamp(amount, -maxAngle, maxAngle);
+		
 		setDir(forward.rotateAroundAxis(left, -amount)); //amount negated so that positive is to up
 	}
 	
@@ -176,7 +168,7 @@ public class Camera {
 		forward = forward.normalized();
 		setForward(forward);
 		
-		Point3D left = getUp().cross(forward).normalized();
+		Point3D left = Point3D.getUP().cross(forward).normalized(); //Using (0, 1, 0) as the UP in this calculation prevent camera from tilting.
 		setLeft(left);
 		
 		Point3D up = forward.cross(left).normalized();
@@ -190,5 +182,40 @@ public class Camera {
 	
 	public SimpleMatrix getViewMatrix() {
 		return viewMatrix;
+	}
+	
+	/**
+	 * Calculates the current pitch.
+	 * Positive is up, negative is down. Horizontal is 0, 90 is up etc.
+	 * @return 
+	 */
+	public double getPitch() {
+		return Math.toDegrees(Math.asin(getForward().y));
+	}
+	
+	/**
+	 * Calculates the current yaw.
+	 * Positive is to the right, negative to the left.
+	 * 
+	 * @return 
+	 */
+	public double getYaw() {
+		Point3D forward = getForward().negate();
+		return Math.toDegrees(-Math.atan2(forward.x, forward.z));
+	}
+	
+	public void setYawAndPitch(double yaw, double pitch) {
+		pitch = HelperFunctions.clamp(pitch, -89, 89);
+		
+		double cosPitch = Math.cos(Math.toRadians(pitch));
+		double sinPitch = Math.sin(Math.toRadians(pitch));
+		double cosYaw = Math.cos(Math.toRadians(yaw));
+		double sinYaw = Math.sin(Math.toRadians(yaw));
+		
+		double x = cosPitch * sinYaw;
+		double y = sinPitch;
+		double z = cosPitch * -cosYaw;
+		
+		setDir(new Point3D(x, y, z));
 	}
 }

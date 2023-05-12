@@ -14,6 +14,10 @@ public abstract class Projection {
 		this.cam = cam;
 	}
 	
+	public Point2D project(SimpleMatrix point) {
+		return project(Point3D.fromMatrix(point));
+	}
+	
 	public abstract Point2D project(Point3D point);
 	
 	public Point2D[] projectPoints(Point3D... points) {

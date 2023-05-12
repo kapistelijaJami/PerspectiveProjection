@@ -27,15 +27,15 @@ import perspectiveprojection.Point3D;
 		The values are between -1 and 1 for x and y, and 0 and 1 for z. If they are not, they should be outside of the viewing frustum.
 	The last one is screen space / window space. These are the 2D coordinates that can be rendered to screen.
 		To get to these we do viewport transformation. The NDC are scaled and translated to fit in the rendering screen.
-		-1 x in NDC will be 0 in screen space, and 1 x in NDC will be screen width in screen space etc.
+		x = -1 in NDC will be 0 in screen space, and x = 1 in NDC will be screen width in screen space etc.
 		y value should be mapped so that decreasing y in NDC is increasing y in screen space, since usually y grows down when rendering in 2D.
-		You could ignore the z coordinate, it doesn't affect the rendering location, but it tells which points are closest.
+		You could ignore the z coordinate, it doesn't affect the rendering location, but it tells which points are closest to the camera.
 */
 
 public class PerspectiveProjection extends Projection {
 	private SimpleMatrix projectionMatrix = SimpleMatrix.identity(4);
 	
-	public PerspectiveProjection(Camera cam) {
+	/*public PerspectiveProjection(Camera cam) {
 		super(cam);
 		
 		//source: https://www.youtube.com/watch?v=EqNcqBdrNyI
@@ -58,10 +58,10 @@ public class PerspectiveProjection extends Projection {
 					{                0,       0, lambda, -lambda * zNear },
 					{                0,       0,      1,               0 }
 				});
-	}
+	}*/
 	
 	//NEW VERSION USING OPENGL GUIDE: http://www.songho.ca/opengl/gl_projectionmatrix.html
-	public PerspectiveProjection(Camera cam, String s) { //TODO: remove string when this works
+	public PerspectiveProjection(Camera cam) {
 		super(cam);
 		
 		double n = 1; //distance to near plane.
@@ -104,19 +104,20 @@ public class PerspectiveProjection extends Projection {
 		
 		SimpleMatrix viewSpace = cam.getViewMatrix().mult(v); //we do projection with viewMatrix to go from world space to view space (camera pov)
 		
-		System.out.println("-----------------");
+		/*System.out.println("-----------------");
 		
 		System.out.println("world space: " + p);
 		
-		System.out.println("viewSpace: " + Point3D.fromMatrix(viewSpace));
+		System.out.println("viewSpace: " + Point3D.fromMatrix(viewSpace));*/
 		
 		
 		SimpleMatrix clipSpace = projectionMatrix.mult(viewSpace); //res is now in clip space. We still have to do perspective divide, to normalize the coordinates to normalized device coordinates (NDC)
 		Point3D result = Point3D.fromMatrix(clipSpace);
 		double w = clipSpace.get(3);
 		
-		System.out.println("Clip space: " + result);
+		//System.out.println("Clip space: " + result);
 		
+		//TODO: do clipping
 		//Here should happen the frustum culling / clipping (if  -w < x, y, z < w then the point is valid. If it's outside the w's, then it's culled, see http://www.songho.ca/opengl/gl_projectionmatrix.html)
 		//There^ viewSpace / eyeSpace uses right handed coordinates, and looking to negative z, but NDC is using left handed one, looking towards positive z.
 		
@@ -124,7 +125,7 @@ public class PerspectiveProjection extends Projection {
 			result = result.divide(w); //NDC / image space (x and y should be between -1 and 1, and z should be between 0 and 1)
 		}
 		
-		System.out.println("w: " + w + ", --> after perspective divide (NDC): " + result);
+		//System.out.println("w: " + w + ", --> after perspective divide (NDC): " + result);
 		
 		
 		int width = 1280;
@@ -133,13 +134,13 @@ public class PerspectiveProjection extends Projection {
 		result.y = (height * -result.y + height) / 2; //This should flip the coordinates for y
 		
 		
-		System.out.println("Screen space -> " + result);
+		/*System.out.println("Screen space -> " + result);
 		
 		if (w < 0) {
 			System.out.println("Point should be outside of the frustum.");
 		}
 		
-		System.out.println("-----------------");
+		System.out.println("-----------------");*/
 		
 		return new Point2D(result.x, result.y);
 	}

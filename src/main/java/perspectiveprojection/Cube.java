@@ -6,29 +6,34 @@ import java.awt.GradientPaint;
 import java.awt.Graphics2D;
 import java.awt.Paint;
 import java.awt.Point;
+import org.ejml.simple.SimpleMatrix;
 
 public class Cube {
-	private double cubeSize;
+	private SimpleMatrix modelMatrix; //Converts the object from model space to world space. Contains the information for object location, scale and rotation.
+	//private double cubeSize;
 	
 	//points are between negative cubeSize and positive cubeSize
 	private Point3D[] starts = new Point3D[12];
 	private Point3D[] ends = new Point3D[12];
 	
 	public Cube(double cubeSize) { //if cube size is 100, then the whole cube is 200x200x200, because it will be -100 to 100 around the offset that's sent to render.
-		this.cubeSize = cubeSize;
+		//this.cubeSize = cubeSize;
+		modelMatrix = SimpleMatrix.diag(cubeSize, cubeSize, cubeSize, 1);
+		
+		int offset = 1;
 		
 		//4 corners that are not touching each other all have 3 unique lines. Those define the whole cube.
 		//So 3 lines start from the same point, then the next point same thing etc. starts[0] connects to ends[0] etc.
-		starts[0] = new Point3D(cubeSize, cubeSize, cubeSize);
+		starts[0] = new Point3D(offset, offset, offset);
 		starts[1] = starts[0].copy();
 		starts[2] = starts[0].copy();
-		starts[3] = new Point3D(-cubeSize, cubeSize, -cubeSize);
+		starts[3] = new Point3D(-offset, offset, -offset);
 		starts[4] = starts[3].copy();
 		starts[5] = starts[3].copy();
-		starts[6] = new Point3D(-cubeSize, -cubeSize, cubeSize);
+		starts[6] = new Point3D(-offset, -offset, offset);
 		starts[7] = starts[6].copy();
 		starts[8] = starts[6].copy();
-		starts[9] = new Point3D(cubeSize, -cubeSize, -cubeSize);
+		starts[9] = new Point3D(offset, -offset, -offset);
 		starts[10] = starts[9].copy();
 		starts[11] = starts[9].copy();
 		
@@ -47,17 +52,20 @@ public class Cube {
 		}
 	}
 	
-	public void render(Graphics2D g, Point3D offset, Projection projection) {
+	public void setLocation(Point3D loc) {
+		modelMatrix.setColumn(3, 0, loc.x, loc.y, loc.z);
+	}
+	
+	public void render(Graphics2D g, Projection projection) {
 		//color this corner red:
 		Point3D vertex = new Point3D(1, 1, 1);
-		vertex = vertex.mult(cubeSize);
 		
 		for (int i = 0; i < starts.length; i++) {
 			Point3D start = starts[i];
 			Point3D end = ends[i];
 			
-			Point s = projection.project(start.add(offset)).asPoint();
-			Point e = projection.project(end.add(offset)).asPoint();
+			Point s = projection.project(modelMatrix.mult(start.asHomogeneousMatrix())).asPoint();
+			Point e = projection.project(modelMatrix.mult(end.asHomogeneousMatrix())).asPoint();
 			
 			Paint paint = new GradientPaint(s, Color.white, e, Color.white);
 			if (start.equals(vertex)) {

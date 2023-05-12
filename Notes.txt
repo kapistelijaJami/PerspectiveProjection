@@ -1,0 +1,49 @@
+When doing the view matrix, the first row 3 elements will be either camera left or camera right depending whether you want the transformed points to end up to the positive Z or negative Z. 
+The choice also depends on which way you interpret the forward vector. If the forward is the direction your camera views (which makes most sense), then you have to negate it for the matrix if you want to the points to end up to negative Z. Otherwise you don't have to negate it. You can always swap the left and right by negating as well.
+
+So, you don't have to negate anything if your vectors will match the unit vectors when the viewMatrix is applied and the camera pov is oriented to the origin. This is when the camera looks at positive Z and you use left vector (because the X axis is on the left of Z when looking to positive Z). If you want the camera to look at negative Z, you have to negate forward, but also left, because the positive X is then to the right of the camera (and the view would be flipped around the XZ plane).
+
+
+
+
+
+Idea:
+Keep track of the translate values, which is the camera location. (or keep a matrix with columns as all the values, -left, up, -forward and location)
+When constructing the view matrix, you have to do the inverse movements as how you would position the camera where it is,
+so you can take the inverse of the matrix and end up with the view matrix. You could also transpose the top left 3x3 submatrix,
+because inverse of a rotation matrix is equal to its transpose, and then calculate the location like below.
+
+But inverse is slower and not needed.
+
+
+
+
+
+
+
+
+
+
+
+
+How to calculate the view matrix again when translating camera:
+The last column in the rotation * translate matrix multiplication is just calculated by dot products (basic matrix multiplication),
+translate matrix has negated locations, so you can just replace them with the dot product and negate:
+
+// Re-calculate the view matrix
+viewMatrix[0][3] = -dot(viewMatrix[0].xyz, cameraPosition);
+viewMatrix[1][3] = -dot(viewMatrix[1].xyz, cameraPosition);
+viewMatrix[2][3] = -dot(viewMatrix[2].xyz, cameraPosition);
+
+
+a.x * -b.x + a.y * -b.y + a.z * -b.z
+is the same result as
+-(a.x * b.x + a.y * b.y + a.z * b.z)
+So we can effectively negate the camera location still after the dot product without actually negating the location itself.
+
+
+
+
+
+
+Inverse of a rotation matrix is equal to its transpose. This is because rotation matrices are orthogonal matrices, which means that their inverse is equal to their transpose. Orthogonal matrices are square matrices whose columns and rows are orthonormal vectors (i.e., perpendicular to each other and each has a length of 1).

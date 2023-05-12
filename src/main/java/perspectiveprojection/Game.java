@@ -19,7 +19,7 @@ public class Game extends GameLoop {
 	private Camera cam = new Camera(new Point3D(800, 800, 800));
 	private Cube cube = new Cube(100);
 	private Cube cameraObject = new Cube(20);
-	private Projection projection = new PerspectiveProjection(cam, "");
+	private Projection projection = new PerspectiveProjection(cam);
 	//private Projection projection = new OrtographicProjection(cam);
 	
 	public boolean up = false;
@@ -32,6 +32,7 @@ public class Game extends GameLoop {
 	public boolean s = false;
 	public boolean d = false;
 	public boolean shift = false;
+	public boolean space = false;
 	public boolean ctrl = false;
 	
 	public Game(int fps) {
@@ -49,28 +50,29 @@ public class Game extends GameLoop {
 		canvas.addMouseMotionListener(input);
 		canvas.addMouseWheelListener(input);
 		
-		HelperFunctions.printMatrix(projection.getProjectionMatrix());
+		cube.setLocation(new Point3D(100, 100, 100));
+		cameraObject.setLocation(new Point3D(500, 0, 0));
 	}
 	
 	@Override
 	protected void update() {
 		double speed = 0.5;
-		if (left) {
-			//cam.turn(-1);
-			cam.turn2(-1);
-		}
-		if (right) {
-			//cam.turn(1);
-			cam.turn2(1);
-		}
 		if (up) {
-			cam.pitch(1);
+			cam.pitch(speed);
 		}
 		if (down) {
-			cam.pitch(-1);
+			cam.pitch(-speed);
+		}
+		if (left) {
+			cam.turn(-speed);
+			//cam.turnRelativeToWorld(-speed);
+		}
+		if (right) {
+			cam.turn(speed);
+			//cam.turnRelativeToWorld(speed);
 		}
 		
-		speed *= 4;
+		speed *= 10;
 		
 		if (w) {
 			cam.moveForward(speed);
@@ -85,7 +87,7 @@ public class Game extends GameLoop {
 			cam.moveRight(speed);
 		}
 		
-		if (shift) {
+		if (shift || space) {
 			cam.moveUp(speed);
 		}
 		if (ctrl) {
@@ -98,12 +100,11 @@ public class Game extends GameLoop {
 		Graphics2D g = window.getGraphics2D();
 		g.setColor(Color.red);
 		
-		Point3D cubeOffset = new Point3D(100, 100, 100);
+		//Point3D cubeOffset = new Point3D(100, 100, 100);
 		
-		cube.render(g, cubeOffset, projection);
+		cube.render(g, projection);
 		
-		Point3D cameraObjectOffset = new Point3D(500, 0, 0);
-		cameraObject.render(g, cameraObjectOffset, projection);
+		cameraObject.render(g, projection);
 		
 		renderAxis(g, new Point3D());
 		

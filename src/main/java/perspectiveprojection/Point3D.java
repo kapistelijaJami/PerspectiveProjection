@@ -123,7 +123,7 @@ public class Point3D {
 		return new Point3D(res.get(0), res.get(1), res.get(2));
 	}
 	
-	public Point3D rotateAroundAxis(Point3D axis, double degrees) { //rotates with right hand rule (thumb towards axis and curled fingers are positive)
+	public Point3D rotateAroundAxis(Point3D axis, double degrees) { //rotates with right hand rule (thumb towards axis positive direction and curled fingers are positive)
 		//Uses the Rodrigues' rotation formula
 		axis = axis.normalized();
 		
@@ -199,7 +199,7 @@ public class Point3D {
 	
 	/**
 	 * Gets the perpendicular vector to both this and p.
-	 * According to right hand rule where index is this, middle is p, and result is thumb.
+	 * According to right hand rule where index finger is this, middle finger is p, and result is thumb.
 	 * @param p
 	 * @return 
 	 */
@@ -237,5 +237,62 @@ public class Point3D {
 	
 	public static Point3D fromMatrix(SimpleMatrix m) {
 		return new Point3D(m.get(0), m.get(1), m.get(2));
+	}
+	
+	/**
+	 * Creates a new Point that is the orthogonal projection of this to p.
+	 * @param p
+	 * @return 
+	 */
+	public Point3D projectTo(Point3D p) {
+		return p.mult(this.dot(p) / p.dot(p));
+	}
+	
+	/**
+	 * Returns the angle between the two vectors.
+	 * Formula works for unit vectors, that's why it normalizes them first.
+	 * @param p
+	 * @return 
+	 */
+	public double angleBetween(Point3D p) {
+		return angleBetweenUnitVectors(normalized(), p.normalized()); //Source: https://www.youtube.com/watch?v=DPfxjQ6sqrc
+	}
+	
+	/**
+	 * Returns the angle between the two vectors.
+	 * Assumes the vectors are unit vectors (length 1).
+	 * Doesn't use many computationally intensive calculations, like sqrt. (Only acos, which is a must anyway)
+	 * @param a
+	 * @param b
+	 * @return 
+	 */
+	public static double angleBetweenUnitVectors(Point3D a, Point3D b) {
+		return Math.toDegrees(Math.acos(a.dot(b))); //Source: https://www.youtube.com/watch?v=DPfxjQ6sqrc
+	}
+	
+	public boolean isPerpendicular(Point3D p) {
+		if (isZero() || p.isZero()) {
+			return false;
+		}
+		return this.dot(p) == 0;
+	}
+	
+	public boolean isSameDirection(Point3D p) {
+		return this.dot(p) > 0;
+	}
+	
+	public boolean isOppositeDirection(Point3D p) {
+		return this.dot(p) < 0;
+	}
+	
+	public boolean isParallel(Point3D p) {
+		if (isZero() || p.isZero()) {
+			return false;
+		}
+		return cross(p).isZero();
+	}
+	
+	public boolean isZero() {
+		return x == 0 && y == 0 && z ==0;
 	}
 }

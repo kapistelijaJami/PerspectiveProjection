@@ -10,9 +10,9 @@ import javax.swing.event.MouseInputListener;
 
 public class KeyInput implements MouseInputListener, MouseWheelListener, KeyListener {
 	private Game game;
-	/*private Point clickLoc; //where was the click location of the mouse relative to the window
+	private Point clickLoc; //where was the click location of the mouse relative to the window
 	private Point2D clickRot;
-	private Point3D clickPos; //what position the game was at when the click happened*/
+	//private Point3D clickPos; //what position the game was at when the click happened
 	
 	public KeyInput(Game game) {
 		this.game = game;
@@ -26,9 +26,9 @@ public class KeyInput implements MouseInputListener, MouseWheelListener, KeyList
 	@Override
 	public void mousePressed(MouseEvent e) {
 		Camera cam = game.getCamera();
-		/*clickRot = new Point2D(cam.getYaw(), cam.getPitch());
+		clickRot = new Point2D(cam.getYaw(), cam.getPitch());
 		clickLoc = e.getPoint();
-		clickPos = cam.getLoc().copy();*/
+		//clickPos = cam.getLoc().copy();
 	}
 	
 	@Override
@@ -48,20 +48,21 @@ public class KeyInput implements MouseInputListener, MouseWheelListener, KeyList
 	
 	@Override
 	public void mouseDragged(MouseEvent e) {
-		/*Point p = e.getPoint();
+		Point p = e.getPoint();
 		Point diff = new Point(p.x - clickLoc.x, p.y - clickLoc.y);
 		Camera cam = game.getCamera();
 		
 		if (checkMouseButtonMask(e, MouseEvent.BUTTON1_DOWN_MASK)) {
-			cam.setYaw(clickRot.x + diff.x / Math.max(2, 1.5 * 1)); // *1 is zoom
-			cam.setPitch(clickRot.y + diff.y / Math.max(2, 1.5 * 1));
+			double yaw = clickRot.x + diff.x / Math.max(4, 1.5 * 1); // *1 is zoom
+			double pitch = clickRot.y - diff.y / Math.max(4, 1.5 * 1);
+			
+			cam.setYawAndPitch(yaw, pitch);
+			
 		} else if (checkMouseButtonMask(e, MouseEvent.BUTTON3_DOWN_MASK) || checkMouseButtonMask(e, MouseEvent.BUTTON2_DOWN_MASK)) {
-			cam.getLoc().x = (clickPos.x + diff.x / 1); // /1 is zoom
-			cam.getLoc().y = (clickPos.y + diff.y / 1);
+			/*cam.getLoc().x = (clickPos.x + diff.x / 1); // /1 is zoom
+			cam.getLoc().y = (clickPos.y + diff.y / 1);*/
 		}
-		
-		game.updateProjection();
-		mousePressed(e); //resets the click locations for this event, ready to receive the next drag event*/
+		mousePressed(e); //resets the click locations for this event, ready to receive the next drag event
 	}
 	
 	private boolean checkMouseButtonMask(MouseEvent e, int mask) {
@@ -77,7 +78,7 @@ public class KeyInput implements MouseInputListener, MouseWheelListener, KeyList
 	public void mouseWheelMoved(MouseWheelEvent e) { //TODO: change to affect fov instead
 		//game.zoom *= e.getPreciseWheelRotation() == -1 ? 1.5 : 0.75;
 		Camera cam = game.getCamera();
-		cam.moveForward(50 * e.getPreciseWheelRotation());
+		//cam.moveForward(50 * e.getPreciseWheelRotation());
 		//cam.getLoc().z += 50 * e.getPreciseWheelRotation();
 		//game.updateProjection();
 	}
@@ -121,6 +122,9 @@ public class KeyInput implements MouseInputListener, MouseWheelListener, KeyList
 			case KeyEvent.VK_SHIFT:
 				game.shift = true;
 				break;
+			case KeyEvent.VK_SPACE:
+				game.space = true;
+				break;
 			case KeyEvent.VK_CONTROL:
 				game.ctrl = true;
 				break;
@@ -160,6 +164,9 @@ public class KeyInput implements MouseInputListener, MouseWheelListener, KeyList
 				break;
 			case KeyEvent.VK_SHIFT:
 				game.shift = false;
+				break;
+			case KeyEvent.VK_SPACE:
+				game.space = false;
 				break;
 			case KeyEvent.VK_CONTROL:
 				game.ctrl = false;

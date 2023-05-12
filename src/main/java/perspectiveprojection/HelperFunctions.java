@@ -62,7 +62,7 @@ public class HelperFunctions {
 		return angle;
 	}
 	
-	public static double clamp(double val, int min, int max) {
+	public static double clamp(double val, double min, double max) {
 		return Math.max(Math.min(val, max), min);
 	}
 	

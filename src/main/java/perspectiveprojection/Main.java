@@ -12,10 +12,10 @@ public class Main {
 		p = p.rotateAroundAxis(new Point3D(0, 1, 0), 5);
 		System.out.println(p);*/
 		
-		Camera cam = new Camera(0, 0, 1000);
+		/*Camera cam = new Camera(0, 0, 1000);
 		Point3D p = new Point3D(0, 0, -6000);
 		Projection orthProjection = new OrtographicProjection(cam);
-		System.out.println(orthProjection.project(p));
+		System.out.println(orthProjection.project(p));*/
 		
 		/*int x = -1;
 		int y = 1;
@@ -39,8 +39,13 @@ public class Main {
 		
 		new Game(60).start();
 		
+		double x = 0.39;
+		double z = 0.89;
+		System.out.println(Math.atan2(x, z));
+		
 		//testSimpleMatrix1(); //See this to know which way matrix multiplication is done in this library
 		//testSimpleMatrix2();
+		//test();
 	}
 	
 	public static void testSimpleMatrix1() {
@@ -121,5 +126,62 @@ public class Main {
 		
 		System.out.println("mat.mult(vec):");
 		HelperFunctions.printMatrix(mat.mult(v));
+	}
+	
+	public static void test() {
+		Point3D forward = new Point3D(0, 0.55, -0.83).normalize();
+		Point3D left = new Point3D(0, 1, 0).cross(forward).normalized(); //the first up hardcoded, doesn't work when forward is pointing up or down.
+		Point3D up = forward.cross(left).normalized();
+		
+		//translation matrix
+		SimpleMatrix T = new SimpleMatrix(new double[][] {
+					{ 1, 0, 0, 4 },
+					{ 0, 1, 0, 5 },
+					{ 0, 0, 1, 6 },
+					{ 0, 0, 0, 1 }
+				});
+		
+		//rotation matrix (as column vectors, as row vectors it would be the inverse operation, since transpose is the inverse of rotation matrix.)
+		SimpleMatrix R = new SimpleMatrix(new double[][] {
+					{ left.x, up.x, forward.x, 0 },
+					{ left.y, up.y, forward.y, 0 },
+					{ left.z, up.z, forward.z, 0 },
+					{      0,    0,         0, 1 }
+				});
+		
+		//If I do R * T, which is translate first, then rotate, the resulting matrix loses the translate
+		//information (the last column will be different), but keeps the rotation information (first 3 columns are the same).
+		SimpleMatrix RT = R.mult(T);
+		System.out.println("T:");
+		HelperFunctions.printMatrix(T);
+		System.out.println("Last column is different than RT:");
+		HelperFunctions.printMatrix(RT);
+		
+		System.out.println("But R:");
+		HelperFunctions.printMatrix(R);
+		System.out.println("First 3 columns are still same as RT:");
+		HelperFunctions.printMatrix(RT);
+		
+		System.out.println("--------------\n");
+		
+		//On the other hand if I do T * R, rotate first, then translate, the resulting matrix keeps the translate
+		//information, but IT ALSO KEEPS the rotation information.
+		SimpleMatrix TR = T.mult(R);
+		System.out.println("T:");
+		HelperFunctions.printMatrix(T);
+		System.out.println("Last column is the same as TR:");
+		HelperFunctions.printMatrix(TR);
+		
+		System.out.println("But R:");
+		HelperFunctions.printMatrix(R);
+		System.out.println("First 3 columns are ALSO still same as TR:");
+		HelperFunctions.printMatrix(TR);
+		
+		//This should be because the matrices are homogeneous transformation matrices (i.e., has a 4th row of (0, 0, 0, 1)) 
+		
+		//So only if I do rotation last it will lose the translate info,
+		//otherwise the matrix is just a combination of the matrices and no values will be changed
+		//This means I could have matrix for positioning and orienting the camera (it is in that order already if I just place the values as columns),
+		//and take the inverse to create the viewMatrix. Of course, taking the inverse is slower than doing some other way.
 	}
 }
