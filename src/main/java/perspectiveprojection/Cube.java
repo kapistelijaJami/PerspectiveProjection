@@ -60,22 +60,48 @@ public class Cube {
 		//color this corner red:
 		Point3D vertex = new Point3D(1, 1, 1);
 		
+		/*LineSegment p = projection.projectLineSegment(modelMatrix.mult(starts[1].asHomogeneousMatrix()), modelMatrix.mult(ends[1].asHomogeneousMatrix()));
+		if (p == null) {
+			System.out.println("tuli");
+			return;
+		} else {
+			//g.setColor(Color.BLUE);
+			//g.fillOval((int) p.getEnd().x, (int) p.getEnd().y, 3, 3);
+		}*/
+		
+		
+		
 		for (int i = 0; i < starts.length; i++) {
 			Point3D start = starts[i];
 			Point3D end = ends[i];
 			
-			Point s = projection.project(modelMatrix.mult(start.asHomogeneousMatrix())).asPoint();
-			Point e = projection.project(modelMatrix.mult(end.asHomogeneousMatrix())).asPoint();
+			SimpleMatrix worldS = modelMatrix.mult(start.asHomogeneousVector());
+			SimpleMatrix worldE = modelMatrix.mult(end.asHomogeneousVector());
 			
-			Paint paint = new GradientPaint(s, Color.white, e, Color.white);
+			LineSegment line = projection.projectLineSegment(Point3D.fromMatrix(worldS), Point3D.fromMatrix(worldE));
+			
+			
+			if (line == null) { //the whole line is outside the near and far clipping planes
+				continue;
+			}
+			
+			Point3D s = line.getStart();
+			Point3D e = line.getEnd();
+			
+			Paint paint = new GradientPaint(s.getAs2DInt(), Color.white, e.getAs2DInt(), Color.white);
 			if (start.equals(vertex)) {
-				paint = new GradientPaint(s, Color.red, e, Color.white);
+				paint = new GradientPaint(s.getAs2DInt(), Color.red, e.getAs2DInt(), Color.white);
 			} else if (end.equals(vertex)) {
-				paint = new GradientPaint(s, Color.white, e, Color.red);
+				paint = new GradientPaint(s.getAs2DInt(), Color.white, e.getAs2DInt(), Color.red);
 			}
 			
 			g.setPaint(paint);
-			g.drawLine(s.x, s.y, e.x, e.y);
+			g.drawLine((int) s.x, (int) s.y, (int) e.x, (int) e.y);
+			
+			
+			g.setColor(Color.LIGHT_GRAY);
+			g.fillOval((int) s.x - 3, (int) s.y - 3, 6, 6);
+			g.fillOval((int) e.x - 3, (int) e.y - 3, 6, 6);
 		}
 	}
 }

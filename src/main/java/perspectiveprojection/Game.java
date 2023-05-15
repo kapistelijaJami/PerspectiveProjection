@@ -16,7 +16,7 @@ public class Game extends GameLoop {
 	
 	//perspective good location when translate first, then rotate: loc (586.0, 691.0, 1202.0) yaw -26.0 pitch -153.0
 	//private Camera cam = new Camera(new Point3D(500, 700, 800)); //(new Point3D(-400, 300, 500), -25, 28) works with ortographic (origo might be behind camera). Should be able to work with others with these settings as well
-	private Camera cam = new Camera(new Point3D(800, 800, 800));
+	private Camera cam = new Camera(new Point3D(400, 500, 800));
 	private Cube cube = new Cube(100);
 	private Cube cameraObject = new Cube(20);
 	private Projection projection = new PerspectiveProjection(cam);
@@ -35,9 +35,12 @@ public class Game extends GameLoop {
 	public boolean space = false;
 	public boolean ctrl = false;
 	
+	public static int WIDTH = 1280;
+	public static int HEIGHT = 720;
+	
 	public Game(int fps) {
 		super(fps);
-		window = new Window(1280, 720, "Perspective projection");
+		window = new Window(WIDTH, HEIGHT, "Perspective projection");
 	}
 	
 	@Override
@@ -114,22 +117,30 @@ public class Game extends GameLoop {
 	//Right hand rule, X is red (thumb, to right), Y is green (index, to up), Z is blue (middle, towards cam)
 	private void renderAxis(Graphics2D g, Point3D offset) {
 		Point3D start = new Point3D(0, 0, 0).add(offset);
-		Point s = projection.projectPointsInt(start)[0];
+		//Point3D s = projection.project(start);
 		
 		Point3D xAxis = new Point3D(1000, 0, 0).add(offset);
-		Point x = projection.projectPointsInt(xAxis)[0];
-		g.setColor(Color.red);
-		g.drawLine(s.x, s.y, x.x, x.y);
+		LineSegment x = projection.projectLineSegment(start, xAxis);
+		
+		if (x != null) {
+			x.render(g, Color.red);
+		}
+		
 		
 		Point3D yAxis = new Point3D(0, 1000, 0).add(offset);
-		Point y = projection.projectPointsInt(yAxis)[0];
-		g.setColor(Color.green);
-		g.drawLine(s.x, s.y, y.x, y.y);
+		LineSegment y = projection.projectLineSegment(start, yAxis);
+		
+		if (y != null) {
+			y.render(g, Color.green);
+		}
+		
 		
 		Point3D zAxis = new Point3D(0, 0, 1000).add(offset);
-		Point z = projection.projectPointsInt(zAxis)[0];
-		g.setColor(Color.blue);
-		g.drawLine(s.x, s.y, z.x, z.y);
+		LineSegment z = projection.projectLineSegment(start, zAxis);
+		
+		if (z != null) {
+			z.render(g, Color.blue);
+		}
 	}
 	
 	public Camera getCamera()  {

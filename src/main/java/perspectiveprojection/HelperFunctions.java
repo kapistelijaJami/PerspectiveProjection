@@ -14,6 +14,10 @@ public class HelperFunctions {
 		return Math.sqrt(x * x + y * y + z * z);
 	}
 	
+	public static double pythagoras4D(double x, double y, double z, double w) {
+		return Math.sqrt(x * x + y * y + z * z + w * w);
+	}
+	
 	public static double distance(Point2D start, Point2D to) {
 		return distance(start.x, start.y, to.x, to.y);
 	}
@@ -141,5 +145,63 @@ public class HelperFunctions {
 			return 1;
 		}
 		return (int) Math.log10(i) + 1;
+	}
+	
+	public static boolean isInsideFarAndNear(Point3D p) {
+		return p.z >= 0 && p.z <= 1;
+	}
+	
+	public static boolean lineIsVisibleBetweenFarAndNear(Point3D s, Point3D e) {
+		return isInsideFarAndNear(s) || isInsideFarAndNear(e);
+	}
+	
+	public static boolean lineIsVisibleBetweenFarAndNear(LineSegment line) {
+		return lineIsVisibleBetweenFarAndNear(line.getStart(), line.getEnd());
+	}
+	
+	public static double lerp(double t, double a, double b) {
+		return (1 - t) * a + t * b;
+	}
+	
+	/*public static Point3D intersectionPointWithPlane(Point3D pointOnPlane, Point3D normal, Point3D start, Point3D end) {
+		// Calculate t value where line intersects camera plane
+		double t = (pointOnPlane.z - start.z) / (end.z - start.z);
+		
+		// Calculate intersection point
+		double x = lerp(t, start.x, end.x);
+		double y = lerp(t, start.y, end.y);
+		double z = pointOnPlane.z;
+		
+		return new Point3D(x, y, z);
+	}*/
+	
+	public static SimpleMatrix intersectionPointWithPlane(SimpleMatrix pointOnPlane, SimpleMatrix normal, SimpleMatrix start, SimpleMatrix end) {
+		SimpleMatrix dir = end.minus(start);
+		
+		double denominator = normal.dot(dir);
+		if (denominator == 0) { //Line and plane are parallel, no intersection possible
+			return null;
+		}
+		
+		SimpleMatrix planeToPoint = pointOnPlane.minus(start);
+		double t = planeToPoint.dot(normal) / denominator;
+		if (t < 0 || t > 1) { //Intersection point is outside the line segment
+			return null;
+		}
+		
+		return start.plus(dir.scale(t));
+	}
+	
+	public static SimpleMatrix normalize4DVector(SimpleMatrix v) {
+		double x = v.get(0);
+		double y = v.get(1);
+		double z = v.get(2);
+		double w = v.get(3);
+		
+		double magnitude = pythagoras4D(x, y, z, w);
+		if (magnitude == 0) {
+			return v;
+		}
+		return v.divide(magnitude);
 	}
 }

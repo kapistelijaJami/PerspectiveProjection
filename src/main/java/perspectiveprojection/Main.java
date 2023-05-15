@@ -39,9 +39,9 @@ public class Main {
 		
 		new Game(60).start();
 		
-		double x = 0.39;
+		/*double x = 0.39;
 		double z = 0.89;
-		System.out.println(Math.atan2(x, z));
+		System.out.println(Math.atan2(x, z));*/
 		
 		//testSimpleMatrix1(); //See this to know which way matrix multiplication is done in this library
 		//testSimpleMatrix2();

@@ -75,10 +75,10 @@ public class KeyInput implements MouseInputListener, MouseWheelListener, KeyList
 	}
 	
 	@Override
-	public void mouseWheelMoved(MouseWheelEvent e) { //TODO: change to affect fov instead
+	public void mouseWheelMoved(MouseWheelEvent e) {
 		//game.zoom *= e.getPreciseWheelRotation() == -1 ? 1.5 : 0.75;
 		Camera cam = game.getCamera();
-		//cam.moveForward(50 * e.getPreciseWheelRotation());
+		cam.moveForward(50 * -e.getPreciseWheelRotation());
 		//cam.getLoc().z += 50 * e.getPreciseWheelRotation();
 		//game.updateProjection();
 	}

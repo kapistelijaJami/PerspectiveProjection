@@ -6,8 +6,6 @@ import perspectiveprojection.Point2D;
 import perspectiveprojection.Point3D;
 
 public class OrtographicProjection extends Projection {
-	private SimpleMatrix projectionMatrix = SimpleMatrix.identity(4);
-	
 	public OrtographicProjection(Camera cam) {
 		super(cam);
 		
@@ -43,8 +41,8 @@ public class OrtographicProjection extends Projection {
 	}
 	
 	@Override
-	public Point2D project(Point3D point) {
-		SimpleMatrix res = cam.getViewMatrix().mult(point.asHomogeneousMatrix());
+	public Point3D project(Point3D point) {
+		SimpleMatrix res = cam.getViewMatrix().mult(point.asHomogeneousVector());
 		
 		SimpleMatrix NDCSpace = projectionMatrix.mult(res);
 		Point3D result = Point3D.fromMatrix(NDCSpace);
@@ -55,7 +53,7 @@ public class OrtographicProjection extends Projection {
 		result.y = (height * -result.y + height) / 2; //This should flip the coordinates for y
 		
 		//System.out.println(result);
-		return new Point2D(result.x, result.y);
+		return result;
 	}
 
 	@Override

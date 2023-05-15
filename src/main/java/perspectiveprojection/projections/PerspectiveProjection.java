@@ -2,8 +2,12 @@ package perspectiveprojection.projections;
 
 import org.ejml.simple.SimpleMatrix;
 import perspectiveprojection.Camera;
+import perspectiveprojection.Frustum;
+import perspectiveprojection.Game;
+import perspectiveprojection.HelperFunctions;
 import perspectiveprojection.Point2D;
 import perspectiveprojection.Point3D;
+import perspectiveprojection.ViewportTransformation;
 
 /*
 	(see http://www.songho.ca/opengl/gl_transform.html)
@@ -33,8 +37,6 @@ import perspectiveprojection.Point3D;
 */
 
 public class PerspectiveProjection extends Projection {
-	private SimpleMatrix projectionMatrix = SimpleMatrix.identity(4);
-	
 	/*public PerspectiveProjection(Camera cam) {
 		super(cam);
 		
@@ -64,8 +66,9 @@ public class PerspectiveProjection extends Projection {
 	public PerspectiveProjection(Camera cam) {
 		super(cam);
 		
+		//These depend on how big and far your objects are. These have same units:
 		double n = 1; //distance to near plane.
-		double f = 10; //distance to far plane.
+		double f = 10000; //distance to far plane.
 		
 		
 		//p subscript is projected value, e subscript is eyeSpace/viewSpace
@@ -78,8 +81,8 @@ public class PerspectiveProjection extends Projection {
 		double A = f / (n - f);
 		double B = f * n / (n - f);
 		
-		double fov = 60; //vertical fov
-		double aspect = 16.0 / 9.0; //horizontal aspect ratio (only used to calculate the right distance from the vertical fov)
+		double fov = 60; //vertical fov (If you want to use horizontal fov, you just calculate right first, and either divide the right with horizontal aspect, or multiply it with vertical aspect to get top.)
+		double aspect = Game.WIDTH / (double) Game.HEIGHT; //horizontal aspect ratio (only used to calculate the right distance from the vertical fov)
 		
 		//Calculate top and right (from the center of the near plane) with the field of view and aspect ratio:
 		double top = n * Math.tan(Math.toRadians(fov / 2.0)); //half fov for the right triangle and to get the distance from center of near to the edge, we just want the half fov.
@@ -93,56 +96,50 @@ public class PerspectiveProjection extends Projection {
 				});
 		
 		// params: left, right, bottom, top, near, far
-		// Frustum(-right, right, -top, top, n, f);
+		// Frustum(-right, right, -top, top, n, f); //Near and far might have to be negated
+		
+		
+		
+		SimpleMatrix normalTransform = projectionMatrix.invert().transpose();
+		
+		//Have to transpose these so that they are column vectors, instead of row vectors.
+		SimpleMatrix leftNormal = normalTransform.mult(projectionMatrix.extractVector(true, 3).plus(projectionMatrix.extractVector(true, 0)).transpose());
+		SimpleMatrix rightNormal = normalTransform.mult(projectionMatrix.extractVector(true, 3).minus(projectionMatrix.extractVector(true, 0)).transpose());
+		
+		SimpleMatrix bottomNormal = normalTransform.mult(projectionMatrix.extractVector(true, 3).plus(projectionMatrix.extractVector(true, 1)).transpose());
+		SimpleMatrix topNormal = normalTransform.mult(projectionMatrix.extractVector(true, 3).minus(projectionMatrix.extractVector(true, 1)).transpose());
+		
+		SimpleMatrix nearNormal = normalTransform.mult(projectionMatrix.extractVector(true, 2).transpose()); //different cause from 0 to 1, just the third row
+		SimpleMatrix farNormal = normalTransform.mult(projectionMatrix.extractVector(true, 3).minus(projectionMatrix.extractVector(true, 2)).transpose());
+		
+		frustum = new Frustum(topNormal, bottomNormal, leftNormal, rightNormal, nearNormal, farNormal);
 	}
 	
 	@Override
-	public Point2D project(Point3D p) { //TODO: when this works, multiply the matricies first together and at the end the point
-		//SimpleMatrix wholeProjection = projectionMatrix.mult(viewMatrix);
-		
-		SimpleMatrix v = p.asHomogeneousMatrix(); //p is in world space
-		
-		SimpleMatrix viewSpace = cam.getViewMatrix().mult(v); //we do projection with viewMatrix to go from world space to view space (camera pov)
-		
-		/*System.out.println("-----------------");
-		
-		System.out.println("world space: " + p);
-		
-		System.out.println("viewSpace: " + Point3D.fromMatrix(viewSpace));*/
-		
-		
-		SimpleMatrix clipSpace = projectionMatrix.mult(viewSpace); //res is now in clip space. We still have to do perspective divide, to normalize the coordinates to normalized device coordinates (NDC)
-		Point3D result = Point3D.fromMatrix(clipSpace);
-		double w = clipSpace.get(3);
-		
-		//System.out.println("Clip space: " + result);
+	public Point3D project(Point3D p) {
+		SimpleMatrix clipSpace = projectToClipSpace(p);
 		
 		//TODO: do clipping
 		//Here should happen the frustum culling / clipping (if  -w < x, y, z < w then the point is valid. If it's outside the w's, then it's culled, see http://www.songho.ca/opengl/gl_projectionmatrix.html)
 		//There^ viewSpace / eyeSpace uses right handed coordinates, and looking to negative z, but NDC is using left handed one, looking towards positive z.
 		
-		if (w != 0.0) {
-			result = result.divide(w); //NDC / image space (x and y should be between -1 and 1, and z should be between 0 and 1)
+		
+		double x = clipSpace.get(0);
+		double y = clipSpace.get(1);
+		double z = clipSpace.get(2);
+		double w = clipSpace.get(3);
+		
+		if (x < -w) {
+			System.out.println("VASEN!");
+			return null;
 		}
 		
-		//System.out.println("w: " + w + ", --> after perspective divide (NDC): " + result);
-		
-		
-		int width = 1280;
-		int height = 720;
-		result.x = (width * result.x + width) / 2;
-		result.y = (height * -result.y + height) / 2; //This should flip the coordinates for y
-		
-		
-		/*System.out.println("Screen space -> " + result);
-		
-		if (w < 0) {
-			System.out.println("Point should be outside of the frustum.");
+		if (x > w) {
+			System.out.println("OIKEA!");
+			return null;
 		}
 		
-		System.out.println("-----------------");*/
-		
-		return new Point2D(result.x, result.y);
+		return ViewportTransformation.fromClipSpaceToScreenSpace(clipSpace, Game.WIDTH, Game.HEIGHT);
 	}
 
 	@Override

@@ -1,5 +1,6 @@
 package perspectiveprojection;
 
+import java.awt.Point;
 import org.ejml.simple.SimpleMatrix;
 
 public class Point3D {
@@ -231,8 +232,12 @@ public class Point3D {
 		return new SimpleMatrix(new double[][] {{x}, {y}, {z}});
 	}
 	
-	public SimpleMatrix asHomogeneousMatrix() {
-		return new SimpleMatrix(new double[][] {{x}, {y}, {z}, {1}});
+	public SimpleMatrix asHomogeneousVector() {
+		return asHomogeneousVector(1);
+	}
+	
+	public SimpleMatrix asHomogeneousVector(double newW) {
+		return new SimpleMatrix(new double[][] {{x}, {y}, {z}, {newW}});
 	}
 	
 	public static Point3D fromMatrix(SimpleMatrix m) {
@@ -294,5 +299,13 @@ public class Point3D {
 	
 	public boolean isZero() {
 		return x == 0 && y == 0 && z ==0;
+	}
+	
+	public Point2D getAs2D() {
+		return new Point2D(x, y);
+	}
+	
+	public Point getAs2DInt() {
+		return new Point((int) x, (int) y);
 	}
 }
