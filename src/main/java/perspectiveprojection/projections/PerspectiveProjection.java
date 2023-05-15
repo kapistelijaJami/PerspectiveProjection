@@ -10,10 +10,10 @@ import perspectiveprojection.Point3D;
 import perspectiveprojection.ViewportTransformation;
 
 /*
-	(see http://www.songho.ca/opengl/gl_transform.html)
-	Projection pipeline goes like this:
+(see http://www.songho.ca/opengl/gl_transform.html )
+Projection pipeline goes like this:
 	
-	First we have the object space, which are the points of the object relative to its local origin.
+	First we have the object space / local space / model space, which are the points of the object relative to its local origin.
 	Then we have the world space, which are points of the objects relative to the world origo.
 		To get to the world space, you just apply translation by the location of the object's local origin, called model transform,
 		or just keep track of this in the first place.
@@ -25,42 +25,25 @@ import perspectiveprojection.ViewportTransformation;
 	Then we have clip space, which are the points in homogeneous coordinates, not yet divided by w.
 		To get to the clip space, you apply projectionMatrix. It projects the points to the near plane/projection plane.
 		It doesn't have the finished values in x, y and z yet, they still need to be divided by w, which contains the original z value of
-		the viewSpace, which is what creates the perspective effect.
+		the view space, which is what creates the perspective effect.
 		Here we would do the frustum culling / clipping (if  -w < x, y, z < w then the point is valid. If it's outside the w's, then it's culled, see http://www.songho.ca/opengl/gl_projectionmatrix.html)
+		The homogeneous coordinates basically have the perspective divide done already, the clip space is just w times bigger than the NDC is. 
+		And because the w coordinate for homogeneous coordinates will always be used to divide the other coordinates anyway when tranforming it to
+		normal coordinates, it already has the perspective effect applied.
 	Then we have Normalized Device Coordinates (NDC), which is after we divide by w.
-		The values are between -1 and 1 for x and y, and 0 and 1 for z. If they are not, they should be outside of the viewing frustum.
+		The values are between -1 and 1 for x and y, and 0 and 1 for z. If they are not, they are outside of the viewing frustum.
+		But in that case they would have already been clipped in clip space.
 	The last one is screen space / window space. These are the 2D coordinates that can be rendered to screen.
 		To get to these we do viewport transformation. The NDC are scaled and translated to fit in the rendering screen.
 		x = -1 in NDC will be 0 in screen space, and x = 1 in NDC will be screen width in screen space etc.
 		y value should be mapped so that decreasing y in NDC is increasing y in screen space, since usually y grows down when rendering in 2D.
-		You could ignore the z coordinate, it doesn't affect the rendering location, but it tells which points are closest to the camera.
+		The z component doesn't affect the rendering location, but it tells which points are closest to the camera,
+		so you can decide which poins get rendered first, or occlusion culled away (but I think this should be done earlier).
 */
-
 public class PerspectiveProjection extends Projection {
-	/*public PerspectiveProjection(Camera cam) {
-		super(cam);
-		
-		//source: https://www.youtube.com/watch?v=EqNcqBdrNyI
-		//Very good, especially with the opengl guide: https://www.youtube.com/watch?v=U0_ONQQ5ZNM
-		//This seems pretty good: https://www.youtube.com/watch?v=LhQ85bPCAJ8 (uses left handed coordinates and camera looks at positive z though I think)
-		double fov = 60; // def: 90. This should be vertical fov (I think)
-		double aspect = 9.0 / 16.0; //for some reason this is height / width (I think if it's the other way, it multiplies the y instead, so in [1, 1] in the matrix)
-		double zNear = 0.1; //maybe these 2 needs to be negative?
-		double zFar = 10000;
-		double fovMult = 1.0 / Math.tan(Math.toRadians(fov / 2.0)); //How the field of view scales the objects. (Figher fov = more objects = smaller objects, and the other way around)
-		double lambda = zFar / (zFar - zNear);
-		
-		//lambda - lambda * zNear is separated inside the matrix.
-		
-		//System.out.println("lambda: " + lambda);
-		
-		projectionMatrix = new SimpleMatrix(new double[][] {
-					{ aspect * fovMult,       0,      0,               0 },
-					{                0, fovMult,      0,               0 },
-					{                0,       0, lambda, -lambda * zNear },
-					{                0,       0,      1,               0 }
-				});
-	}*/
+	//Some sources: https://www.youtube.com/watch?v=EqNcqBdrNyI
+	//Very good, especially with the opengl guide: https://www.youtube.com/watch?v=U0_ONQQ5ZNM
+	//This seems pretty good: https://www.youtube.com/watch?v=LhQ85bPCAJ8 (uses left handed coordinates and camera looks at positive z though)
 	
 	//NEW VERSION USING OPENGL GUIDE: http://www.songho.ca/opengl/gl_projectionmatrix.html
 	public PerspectiveProjection(Camera cam) {
@@ -71,20 +54,20 @@ public class PerspectiveProjection extends Projection {
 		double f = 10000; //distance to far plane.
 		
 		
-		//p subscript is projected value, e subscript is eyeSpace/viewSpace
-		//Xp is projected X on near plane, Ze is point's z location in eyeSpace
-		//Xp = -n * Xe / Ze   =   n * Xe / -Ze
-		//Yp = -n * Ye / Ze   =   n * Ye / -Ze
-		//Zp = -n
+		//E is point in eyeSpace/viewSpace, P is projected point (the point gets projected to near plane in x and y direction)
+		//Px is projected X on near plane, Ez is point's z location in eEySpace
+		//Px = -n * Ex / Ez   =   n * Ex / -Ez
+		//Py = -n * Ey / Ez   =   n * Ey / -Ez
+		//Pz = -n
 		
 		//I calculated these myself, differs slightly from opengl one, because I had Zclip going from 0 to 1 instead of -1 to 1
 		double A = f / (n - f);
-		double B = f * n / (n - f);
+		double B = n * A; //was n * f / (n - f)
 		
 		double fov = 60; //vertical fov (If you want to use horizontal fov, you just calculate right first, and either divide the right with horizontal aspect, or multiply it with vertical aspect to get top.)
 		double aspect = Game.WIDTH / (double) Game.HEIGHT; //horizontal aspect ratio (only used to calculate the right distance from the vertical fov)
 		
-		//Calculate top and right (from the center of the near plane) with the field of view and aspect ratio:
+		//Calculate top and right (from the center of the near plane to the edge) with the field of view and aspect ratio:
 		double top = n * Math.tan(Math.toRadians(fov / 2.0)); //half fov for the right triangle and to get the distance from center of near to the edge, we just want the half fov.
 		double right = aspect * top;
 		
@@ -94,9 +77,6 @@ public class PerspectiveProjection extends Projection {
 					{          0,        0,     A,    B },
 					{          0,        0,    -1,    0 }
 				});
-		
-		// params: left, right, bottom, top, near, far
-		// Frustum(-right, right, -top, top, n, f); //Near and far might have to be negated
 		
 		calculateViewingFrustumFromProjectionMatrix();
 	}

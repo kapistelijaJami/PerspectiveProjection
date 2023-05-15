@@ -10,7 +10,7 @@ import perspectiveprojection.Point3D;
 import perspectiveprojection.ViewportTransformation;
 
 public abstract class Projection {
-	private Camera cam;
+	private final Camera cam;
 	protected SimpleMatrix projectionMatrix = SimpleMatrix.identity(4);
 	private Frustum frustum; //Viewing frustum in clip space
 	
@@ -198,7 +198,8 @@ public abstract class Projection {
 	}
 	
 	protected void calculateViewingFrustumFromProjectionMatrix() {
-		SimpleMatrix normalTransform = projectionMatrix.invert().transpose();
+		//This transforms the normals correctly from view space to clip space, since they are not points, but directions.
+		SimpleMatrix normalTransform = projectionMatrix.invert().transpose(); //Inverse and transpose order doesn't matter.
 		
 		//Have to transpose these so that they are column vectors, instead of row vectors.
 		SimpleMatrix leftNormal = normalTransform.mult(projectionMatrix.extractVector(true, 3).plus(projectionMatrix.extractVector(true, 0)).transpose());
@@ -207,9 +208,10 @@ public abstract class Projection {
 		SimpleMatrix bottomNormal = normalTransform.mult(projectionMatrix.extractVector(true, 3).plus(projectionMatrix.extractVector(true, 1)).transpose());
 		SimpleMatrix topNormal = normalTransform.mult(projectionMatrix.extractVector(true, 3).minus(projectionMatrix.extractVector(true, 1)).transpose());
 		
-		SimpleMatrix nearNormal = normalTransform.mult(projectionMatrix.extractVector(true, 2).transpose()); //different cause from 0 to 1, just the third row
+		SimpleMatrix nearNormal = normalTransform.mult(projectionMatrix.extractVector(true, 2).transpose()); //different cause z is from 0 to 1, just the third row
 		SimpleMatrix farNormal = normalTransform.mult(projectionMatrix.extractVector(true, 3).minus(projectionMatrix.extractVector(true, 2)).transpose());
 		
+		//Viewing frustum in clip space:
 		frustum = new Frustum(topNormal, bottomNormal, leftNormal, rightNormal, nearNormal, farNormal);
 	}
 }
