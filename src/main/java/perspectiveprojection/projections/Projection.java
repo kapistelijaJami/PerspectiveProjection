@@ -1,6 +1,5 @@
 package perspectiveprojection.projections;
 
-import java.awt.Point;
 import org.ejml.simple.SimpleMatrix;
 import perspectiveprojection.Camera;
 import perspectiveprojection.Frustum;
@@ -11,9 +10,9 @@ import perspectiveprojection.Point3D;
 import perspectiveprojection.ViewportTransformation;
 
 public abstract class Projection {
-	protected Camera cam;
+	private Camera cam;
 	protected SimpleMatrix projectionMatrix = SimpleMatrix.identity(4);
-	protected Frustum frustum; //Viewing frustum in clip space
+	private Frustum frustum; //Viewing frustum in clip space
 	
 	public Projection(Camera cam) {
 		this.cam = cam;
@@ -23,7 +22,11 @@ public abstract class Projection {
 		return project(Point3D.fromMatrix(point));
 	}
 	
-	public abstract Point3D project(Point3D point);
+	public Point3D project(Point3D point) {
+		SimpleMatrix clipSpace = projectToClipSpace(point);
+		
+		return ViewportTransformation.fromClipSpaceToScreenSpace(clipSpace, Game.WIDTH, Game.HEIGHT);
+	}
 	
 	public Point3D[] projectPoints(Point3D... points) {
 		Point3D[] projectedPoints = new Point3D[points.length];
@@ -57,7 +60,7 @@ public abstract class Projection {
 	}
 	
 	public SimpleMatrix projectToClipSpace(SimpleMatrix point) {
-		SimpleMatrix v = point; //p is in world space
+		SimpleMatrix v = point; //point is in world space
 		SimpleMatrix projectionViewMatrix = projectionMatrix.mult(cam.getViewMatrix());
 		
 		//From world space to viewSpace to clipSpace with one matrix:
@@ -75,12 +78,22 @@ public abstract class Projection {
 		return projectLineSegment(a.asHomogeneousVector(), b.asHomogeneousVector());
 	}
 	
+	/**
+	 * Projects a line segment from world space to screen space.
+	 * Performs frustum cli
+	 * @param a
+	 * @param b
+	 * @return 
+	 */
 	public LineSegment projectLineSegment(SimpleMatrix a, SimpleMatrix b) {
-		SimpleMatrix clipA = projectToClipSpace(a);
-		SimpleMatrix clipB = projectToClipSpace(b);
+		SimpleMatrix clipSpaceA = projectToClipSpace(a);
+		SimpleMatrix clipSpaceB = projectToClipSpace(b);
+		
+		
+		//Frustum clipping (if (-w < x, y, z < w) then the point is valid. If it's outside the w's, then it's clipped, see http://www.songho.ca/opengl/gl_projectionmatrix.html )
 		
 		//Do frustum culling:
-		SimpleMatrix[] clipped = clipLine(clipA, clipB);
+		SimpleMatrix[] clipped = clipLine(clipSpaceA, clipSpaceB);
 		if (clipped == null) {
 			return null;
 		}
@@ -180,48 +193,23 @@ public abstract class Projection {
 		return a >= -w && a <= w;
 	}
 	
-	/*public final void updateViewMatrix() {
-		//double yaw = Math.toRadians(cam.getYaw());
-		//double pitch = Math.toRadians(cam.getPitch());
-		Point3D loc = cam.getLoc();
-		System.out.println("loc " + loc + " yaw " + cam.getYaw() + " pitch " + cam.getPitch());
-		//System.out.println("cosyaw " + Math.cos(yaw) + " sinyaw " + Math.sin(yaw));
-		//System.out.println("cospit " + Math.cos(pitch) + " sinpit " + Math.sin(pitch));
-		
-		//viewMatrix = new SimpleMatrix(new double[][] {
-		//			{ Math.cos(yaw) * Math.cos(pitch),  Math.sin(pitch), Math.sin(yaw) * Math.cos(pitch), -loc.x },
-		//			{ Math.cos(yaw) * Math.sin(pitch),  -Math.cos(pitch), Math.sin(yaw) * Math.sin(pitch), -loc.y },
-		//			{                  -Math.sin(yaw),                0,                   Math.cos(yaw), -loc.z },
-		//			{                               0,                0,                               0,      1 }
-		//		});
-		
-		//viewMatrix = HelperFunctions.getRotateYThenXTranslateMatrix(cam.getPitch(), cam.getYaw(), cam.getLoc().negated());
-		
-		//SimpleMatrix traslateMatrix = new SimpleMatrix(new double[][] {
-		//			{ 1, 0, 0, loc.x },
-		//			{ 0, 1, 0, loc.y },
-		//			{ 0, 0, 1, loc.z },
-		//			{ 0, 0, 0,     1 }
-		//		});
-		
-		//viewMatrix = HelperFunctions.getRotateYThenXMatrix(-cam.getPitch(), -cam.getYaw()).mult(traslateMatrix); //Confirmed that translate is first when doing this way.
-		
-		//viewMatrix = new SimpleMatrix(new double[][] {
-		//			{ Math.cos(yaw) * Math.cos(pitch), -Math.sin(yaw), Math.cos(yaw) * Math.sin(pitch), 0 },
-		//			{ Math.sin(yaw) * Math.cos(pitch),  Math.cos(yaw), Math.sin(yaw) * Math.sin(pitch), 0 },
-		//			{                -Math.sin(pitch),              0,                 Math.cos(pitch), 0 },
-		//			{                          -loc.x,         -loc.y,                          -loc.z, 1 }
-		//		});
-		
-		// wrong way:
-		//viewMatrix = new SimpleMatrix(
-		//		new double[][] {
-		//			{ Math.cos(yaw) * Math.cos(pitch), Math.cos(yaw) * Math.sin(pitch), -Math.sin(yaw),  0 },
-		//			{                 Math.sin(pitch),                -Math.cos(pitch),              0,  0 },
-		//			{ Math.sin(yaw) * Math.cos(pitch), Math.sin(yaw) * Math.sin(pitch),  Math.cos(yaw),  0 },
-		//			{                          -loc.x,                          -loc.y,         -loc.z,  1 }
-		//		});
-	}*/
+	public SimpleMatrix getProjectionMatrix() {
+		return projectionMatrix;
+	}
 	
-	public abstract SimpleMatrix getProjectionMatrix();
+	protected void calculateViewingFrustumFromProjectionMatrix() {
+		SimpleMatrix normalTransform = projectionMatrix.invert().transpose();
+		
+		//Have to transpose these so that they are column vectors, instead of row vectors.
+		SimpleMatrix leftNormal = normalTransform.mult(projectionMatrix.extractVector(true, 3).plus(projectionMatrix.extractVector(true, 0)).transpose());
+		SimpleMatrix rightNormal = normalTransform.mult(projectionMatrix.extractVector(true, 3).minus(projectionMatrix.extractVector(true, 0)).transpose());
+		
+		SimpleMatrix bottomNormal = normalTransform.mult(projectionMatrix.extractVector(true, 3).plus(projectionMatrix.extractVector(true, 1)).transpose());
+		SimpleMatrix topNormal = normalTransform.mult(projectionMatrix.extractVector(true, 3).minus(projectionMatrix.extractVector(true, 1)).transpose());
+		
+		SimpleMatrix nearNormal = normalTransform.mult(projectionMatrix.extractVector(true, 2).transpose()); //different cause from 0 to 1, just the third row
+		SimpleMatrix farNormal = normalTransform.mult(projectionMatrix.extractVector(true, 3).minus(projectionMatrix.extractVector(true, 2)).transpose());
+		
+		frustum = new Frustum(topNormal, bottomNormal, leftNormal, rightNormal, nearNormal, farNormal);
+	}
 }

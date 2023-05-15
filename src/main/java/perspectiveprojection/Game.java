@@ -4,9 +4,7 @@ import java.awt.Canvas;
 import perspectiveprojection.projections.Projection;
 import java.awt.Color;
 import java.awt.Graphics2D;
-import java.awt.Point;
-import perspectiveprojection.projections.OldPerspectiveProjection;
-import perspectiveprojection.projections.OrtographicProjection;
+import perspectiveprojection.projections.OrthographicProjection;
 import perspectiveprojection.projections.PerspectiveProjection;
 import uilibrary.GameLoop;
 import uilibrary.Window;
@@ -20,7 +18,7 @@ public class Game extends GameLoop {
 	private Cube cube = new Cube(100);
 	private Cube cameraObject = new Cube(20);
 	private Projection projection = new PerspectiveProjection(cam);
-	//private Projection projection = new OrtographicProjection(cam);
+	//private Projection projection = new OrthographicProjection(cam);
 	
 	public boolean up = false;
 	public boolean down = false;
@@ -55,6 +53,11 @@ public class Game extends GameLoop {
 		
 		cube.setLocation(new Point3D(100, 100, 100));
 		cameraObject.setLocation(new Point3D(500, 0, 0));
+	}
+	
+	@Override
+	protected void lazyUpdate(int fps) {
+		window.setTitle("Perspective projection (" + fps + " fps)");
 	}
 	
 	@Override

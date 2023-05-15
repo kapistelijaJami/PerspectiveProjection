@@ -3,6 +3,8 @@ package perspectiveprojection;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Graphics2D;
+import java.awt.Paint;
+import java.awt.Point;
 
 public class LineSegment {
 	private Point3D start;
@@ -30,6 +32,11 @@ public class LineSegment {
 		render(g, Color.red);
 	}
 	
+	public void render(Graphics2D g, Paint paint) {
+		g.setPaint(paint);
+		drawLine(g, start, end, 1);
+	}
+	
 	public void render(Graphics2D g, double thickness) {
 		render(g, Color.red, thickness);
 	}
@@ -49,8 +56,17 @@ public class LineSegment {
 		g.drawLine((int) start.x, (int) start.y, (int) end.x, (int) end.y);
 		
 		
+		int pointSize = 8;
 		g.setColor(Color.LIGHT_GRAY);
-		g.fillOval((int) start.x - 3, (int) start.y - 3, 6, 6);
-		g.fillOval((int) end.x - 3, (int) end.y - 3, 6, 6);
+		g.fillOval((int) start.x - pointSize / 2, (int) start.y - pointSize / 2, pointSize, pointSize);
+		g.fillOval((int) end.x - pointSize / 2, (int) end.y - pointSize / 2, pointSize, pointSize);
+	}
+	
+	public Point getStartAs2DInt() {
+		return start.getAs2DInt();
+	}
+	
+	public Point getEndAs2DInt() {
+		return end.getAs2DInt();
 	}
 }

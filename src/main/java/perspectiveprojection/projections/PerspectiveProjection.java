@@ -98,52 +98,6 @@ public class PerspectiveProjection extends Projection {
 		// params: left, right, bottom, top, near, far
 		// Frustum(-right, right, -top, top, n, f); //Near and far might have to be negated
 		
-		
-		
-		SimpleMatrix normalTransform = projectionMatrix.invert().transpose();
-		
-		//Have to transpose these so that they are column vectors, instead of row vectors.
-		SimpleMatrix leftNormal = normalTransform.mult(projectionMatrix.extractVector(true, 3).plus(projectionMatrix.extractVector(true, 0)).transpose());
-		SimpleMatrix rightNormal = normalTransform.mult(projectionMatrix.extractVector(true, 3).minus(projectionMatrix.extractVector(true, 0)).transpose());
-		
-		SimpleMatrix bottomNormal = normalTransform.mult(projectionMatrix.extractVector(true, 3).plus(projectionMatrix.extractVector(true, 1)).transpose());
-		SimpleMatrix topNormal = normalTransform.mult(projectionMatrix.extractVector(true, 3).minus(projectionMatrix.extractVector(true, 1)).transpose());
-		
-		SimpleMatrix nearNormal = normalTransform.mult(projectionMatrix.extractVector(true, 2).transpose()); //different cause from 0 to 1, just the third row
-		SimpleMatrix farNormal = normalTransform.mult(projectionMatrix.extractVector(true, 3).minus(projectionMatrix.extractVector(true, 2)).transpose());
-		
-		frustum = new Frustum(topNormal, bottomNormal, leftNormal, rightNormal, nearNormal, farNormal);
-	}
-	
-	@Override
-	public Point3D project(Point3D p) {
-		SimpleMatrix clipSpace = projectToClipSpace(p);
-		
-		//TODO: do clipping
-		//Here should happen the frustum culling / clipping (if  -w < x, y, z < w then the point is valid. If it's outside the w's, then it's culled, see http://www.songho.ca/opengl/gl_projectionmatrix.html)
-		//There^ viewSpace / eyeSpace uses right handed coordinates, and looking to negative z, but NDC is using left handed one, looking towards positive z.
-		
-		
-		double x = clipSpace.get(0);
-		double y = clipSpace.get(1);
-		double z = clipSpace.get(2);
-		double w = clipSpace.get(3);
-		
-		if (x < -w) {
-			System.out.println("VASEN!");
-			return null;
-		}
-		
-		if (x > w) {
-			System.out.println("OIKEA!");
-			return null;
-		}
-		
-		return ViewportTransformation.fromClipSpaceToScreenSpace(clipSpace, Game.WIDTH, Game.HEIGHT);
-	}
-
-	@Override
-	public SimpleMatrix getProjectionMatrix() {
-		return projectionMatrix;
+		calculateViewingFrustumFromProjectionMatrix();
 	}
 }

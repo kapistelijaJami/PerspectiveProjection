@@ -85,23 +85,17 @@ public class Cube {
 				continue;
 			}
 			
-			Point3D s = line.getStart();
-			Point3D e = line.getEnd();
+			Point s = line.getStartAs2DInt();
+			Point e = line.getEndAs2DInt();
 			
-			Paint paint = new GradientPaint(s.getAs2DInt(), Color.white, e.getAs2DInt(), Color.white);
+			Paint paint = new GradientPaint(s, Color.white, e, Color.white);
 			if (start.equals(vertex)) {
-				paint = new GradientPaint(s.getAs2DInt(), Color.red, e.getAs2DInt(), Color.white);
+				paint = new GradientPaint(s, Color.red, e, Color.white);
 			} else if (end.equals(vertex)) {
-				paint = new GradientPaint(s.getAs2DInt(), Color.white, e.getAs2DInt(), Color.red);
+				paint = new GradientPaint(s, Color.white, e, Color.red);
 			}
 			
-			g.setPaint(paint);
-			g.drawLine((int) s.x, (int) s.y, (int) e.x, (int) e.y);
-			
-			
-			g.setColor(Color.LIGHT_GRAY);
-			g.fillOval((int) s.x - 3, (int) s.y - 3, 6, 6);
-			g.fillOval((int) e.x - 3, (int) e.y - 3, 6, 6);
+			line.render(g, paint);
 		}
 	}
 }

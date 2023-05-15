@@ -1,7 +1,7 @@
 package perspectiveprojection;
 
 import org.ejml.simple.SimpleMatrix;
-import perspectiveprojection.projections.OrtographicProjection;
+import perspectiveprojection.projections.OrthographicProjection;
 import perspectiveprojection.projections.PerspectiveProjection;
 import perspectiveprojection.projections.Projection;
 
