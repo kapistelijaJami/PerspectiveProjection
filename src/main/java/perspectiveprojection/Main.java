@@ -128,7 +128,7 @@ public class Main {
 		HelperFunctions.printMatrix(mat.mult(v));
 	}
 	
-	public static void test() {
+	public static void test() { //Tests how the the translate and rotation order in the same homogeneous matrix affects the outcome.
 		Point3D forward = new Point3D(0, 0.55, -0.83).normalize();
 		Point3D left = new Point3D(0, 1, 0).cross(forward).normalized(); //the first up hardcoded, doesn't work when forward is pointing up or down.
 		Point3D up = forward.cross(left).normalized();

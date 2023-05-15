@@ -80,19 +80,19 @@ public abstract class Projection {
 	
 	/**
 	 * Projects a line segment from world space to screen space.
-	 * Performs frustum cli
+	 * Performs frustum clipping and culling during clip space.
 	 * @param a
 	 * @param b
 	 * @return 
 	 */
-	public LineSegment projectLineSegment(SimpleMatrix a, SimpleMatrix b) {
+	public LineSegment projectLineSegment(SimpleMatrix a, SimpleMatrix b) { //TODO: do the same for faces, clip them, and render the faces by the order of z value in screen space
 		SimpleMatrix clipSpaceA = projectToClipSpace(a);
 		SimpleMatrix clipSpaceB = projectToClipSpace(b);
 		
 		
-		//Frustum clipping (if (-w < x, y, z < w) then the point is valid. If it's outside the w's, then it's clipped, see http://www.songho.ca/opengl/gl_projectionmatrix.html )
+		//Frustum clipping (if (-w < x, y, z < w) then the point is valid (z has to be between 0 and w though). If it's outside the w's, then it's clipped, see http://www.songho.ca/opengl/gl_projectionmatrix.html )
 		
-		//Do frustum culling:
+		//Do frustum clipping/culling:
 		SimpleMatrix[] clipped = clipLine(clipSpaceA, clipSpaceB);
 		if (clipped == null) {
 			return null;
@@ -160,9 +160,9 @@ public abstract class Projection {
 		
 		//NEAR
 		SimpleMatrix pointOnNearPlane = new Point3D(0, 0, 0).asHomogeneousVector();
-		if (a.get(2) < -a.get(3)) {
+		if (a.get(2) < 0) { //z is from 0 to 1.
 			a = HelperFunctions.intersectionPointWithPlane(pointOnNearPlane, frustum.near, a, b);
-		} else if (b.get(2) < -b.get(3)) {
+		} else if (b.get(2) < 0) {
 			b = HelperFunctions.intersectionPointWithPlane(pointOnNearPlane, frustum.near, a, b);
 		}
 		
@@ -186,7 +186,7 @@ public abstract class Projection {
 	}
 	
 	private static boolean pointInside(SimpleMatrix a) {
-		return componentInside(a.get(0), a.get(3)) && componentInside(a.get(1), a.get(3)) && componentInside(a.get(2), a.get(3));
+		return componentInside(a.get(0), a.get(3)) && componentInside(a.get(1), a.get(3)) && a.get(2) >= 0 && a.get(2) <= a.get(3);
 	}
 	
 	private static boolean componentInside(double a, double w) {
