@@ -207,10 +207,12 @@ public abstract class Projection {
 			double sum = 0;
 			int count = 0;
 			for (Light light : lights) {
-				Point3D lightDir = light.location.subtract(loc).normalize();
+				Point3D lightDir = light.location.subtract(loc);
+				double distance = lightDir.magnitude();
+				lightDir.normalize();
 				double dot = n.dot(lightDir);
 				if (dot > 0) {
-					sum += dot;
+					sum += dot * (light.getIntensity() / Math.pow(distance, 2)) * Game.DEFAULT_LIGHT_INTENSITY;
 					count++;
 				}
 			}

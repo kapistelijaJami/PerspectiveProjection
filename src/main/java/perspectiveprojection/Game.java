@@ -24,6 +24,7 @@ public class Game extends GameLoop {
 	
 	private final Light[] lights = new Light[] {new Light(800, 1000, 400), new Light(-500, -300, -400)};
 	public static double ambientLight = 0.05; //from 0 to 1
+	public static double DEFAULT_LIGHT_INTENSITY = 10000;
 	
 	public boolean up = false;
 	public boolean down = false;
