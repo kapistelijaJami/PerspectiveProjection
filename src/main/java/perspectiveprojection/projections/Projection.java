@@ -1,12 +1,18 @@
 package perspectiveprojection.projections;
 
+import java.util.ArrayList;
+import java.util.List;
 import org.ejml.simple.SimpleMatrix;
 import perspectiveprojection.Camera;
+import perspectiveprojection.Face;
 import perspectiveprojection.Frustum;
 import perspectiveprojection.Game;
+import static perspectiveprojection.Game.ambientLight;
 import perspectiveprojection.HelperFunctions;
+import perspectiveprojection.Light;
 import perspectiveprojection.LineSegment;
 import perspectiveprojection.Point3D;
+import perspectiveprojection.Renderable;
 import perspectiveprojection.ViewportTransformation;
 
 public abstract class Projection {
@@ -87,7 +93,7 @@ public abstract class Projection {
 	 * @param b
 	 * @return 
 	 */
-	public LineSegment projectLineSegment(SimpleMatrix a, SimpleMatrix b) { //TODO: do the same for faces, clip them, and render the faces by the order of z value in screen space
+	public LineSegment projectLineSegment(SimpleMatrix a, SimpleMatrix b) {
 		SimpleMatrix clipSpaceA = projectToClipSpace(a);
 		SimpleMatrix clipSpaceB = projectToClipSpace(b);
 		
@@ -181,6 +187,51 @@ public abstract class Projection {
 		if (a == null || b == null) return null;
 		
 		return new SimpleMatrix[] {a, b};
+	}
+	
+	
+	
+	/**
+	 * Transforms the faces to screen space and adjusts their color based on the light sources.
+	 * @param faces
+	 * @param lights
+	 * @return 
+	 */
+	public List<Renderable> projectFaces(List<Face> faces, Light[] lights) {
+		List<Renderable> transformed = new ArrayList<>();
+		for (Face face : faces) {
+			//Calculate color multiplier from light source:
+			Point3D n = face.getFaceNormal();
+			Point3D loc = face.getAverageLocation();
+			
+			double sum = 0;
+			int count = 0;
+			for (Light light : lights) {
+				Point3D lightDir = light.location.subtract(loc).normalize();
+				double dot = n.dot(lightDir);
+				if (dot > 0) {
+					sum += dot;
+					count++;
+				}
+			}
+			
+			double dot = HelperFunctions.clamp(sum / count, ambientLight, 1);
+			face.lightMult = dot;
+			
+			//Transform face to screen space:
+			face = face.applyMatrix(cam.getViewMatrix());
+			//Backface culling:
+			if (face.getFaceNormal().dot(face.getAverageLocation()) >= 0) { //If the normal points to the same direction as camera, we see the back of the face.
+				continue;
+			}
+			
+			face = face.applyMatrix(projectionMatrix);
+			//TODO: do frustum clipping/culling here
+			
+			face = ViewportTransformation.fromClipSpaceToScreenSpace(face, Game.WIDTH, Game.HEIGHT);
+			transformed.add(face);
+		}
+		return transformed;
 	}
 	
 	private static boolean bothPointsInside(SimpleMatrix a, SimpleMatrix b) {

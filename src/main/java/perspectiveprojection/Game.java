@@ -5,7 +5,6 @@ import perspectiveprojection.projections.Projection;
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import perspectiveprojection.projections.OrthographicProjection;
 import perspectiveprojection.projections.PerspectiveProjection;
@@ -122,8 +121,8 @@ public class Game extends GameLoop {
 		
 		renderAxis(g);
 		
-		List<Renderable> transformed = transformFaces(cube.getWorldSpaceFaces());
-		transformed.addAll(transformFaces(smallCube.getWorldSpaceFaces()));
+		List<Renderable> transformed = projection.projectFaces(cube.getWorldSpaceFaces(), lights);
+		transformed.addAll(projection.projectFaces(smallCube.getWorldSpaceFaces(), lights));
 		
 		
 		for (Light light : lights) {
@@ -140,48 +139,6 @@ public class Game extends GameLoop {
 		smallCube.renderWireframe(g, projection);*/
 		
 		window.display(g);
-	}
-	
-	/**
-	 * Collects the faces, transforms them to screen space and gives the faces color based on the light source.
-	 * @param faces
-	 * @return 
-	 */
-	private List<Renderable> transformFaces(List<Face> faces) {
-		List<Renderable> transformed = new ArrayList<>();
-		for (Face face : faces) {
-			//Calculate color multiplier from light source:
-			Point3D n = face.getFaceNormal();
-			Point3D loc = face.getAverageLocation();
-			
-			double sum = 0;
-			int count = 0;
-			for (Light light : lights) {
-				Point3D lightDir = light.location.subtract(loc).normalize();
-				double dot = n.dot(lightDir);
-				if (dot > 0) {
-					sum += dot;
-					count++;
-				}
-			}
-			
-			double dot = HelperFunctions.clamp(sum / count, ambientLight, 1);
-			face.lightMult = dot;
-			
-			//Transform face to screen space:
-			face = face.applyMatrix(cam.getViewMatrix());
-			//Backface culling:
-			if (face.getFaceNormal().dot(face.getAverageLocation()) >= 0) { //If the normal points to the same direction as camera, we see the back of the face.
-				continue;
-			}
-			
-			face = face.applyMatrix(projection.getProjectionMatrix());
-			//TODO: do frustum clipping/culling
-			
-			face = ViewportTransformation.fromClipSpaceToScreenSpace(face, WIDTH, HEIGHT);
-			transformed.add(face);
-		}
-		return transformed;
 	}
 	
 	//Right hand rule, X is red (thumb, to right), Y is green (index, to up), Z is blue (middle, towards cam)
