@@ -57,7 +57,7 @@ public class LineSegment {
 		
 		
 		int pointSize = 8;
-		g.setColor(Color.LIGHT_GRAY);
+		g.setColor(Color.GREEN);
 		g.fillOval((int) start.x - pointSize / 2, (int) start.y - pointSize / 2, pointSize, pointSize);
 		g.fillOval((int) end.x - pointSize / 2, (int) end.y - pointSize / 2, pointSize, pointSize);
 	}

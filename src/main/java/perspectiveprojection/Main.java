@@ -37,7 +37,7 @@ public class Main {
 		
 		HelperFunctions.printSimpleMatrix(viewMatrix.mult(p.asHomogeneousSimpleMatrix()));*/
 		
-		new Game(60).start();
+		new Game(120).start();
 		
 		/*double x = 0.39;
 		double z = 0.89;

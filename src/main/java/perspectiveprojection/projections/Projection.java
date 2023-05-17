@@ -59,13 +59,15 @@ public abstract class Projection {
 		return projectToClipSpace(point.asHomogeneousVector());
 	}
 	
-	public SimpleMatrix projectToClipSpace(SimpleMatrix point) {
-		SimpleMatrix v = point; //point is in world space
-		SimpleMatrix projectionViewMatrix = projectionMatrix.mult(cam.getViewMatrix());
+	public SimpleMatrix projectToClipSpace(SimpleMatrix point) { //point is in world space
+		//SimpleMatrix projectionViewMatrix = projectionMatrix.mult(cam.getViewMatrix());
+		
+		SimpleMatrix projectionViewMatrix = projectionMatrix;
+		point = cam.getViewMatrix().mult(point);
 		
 		//From world space to viewSpace to clipSpace with one matrix:
 		//res is now in clip space. We still have to do perspective divide, to normalize the coordinates to normalized device coordinates (NDC)
-		SimpleMatrix clipSpace = projectionViewMatrix.mult(v);
+		SimpleMatrix clipSpace = projectionViewMatrix.mult(point);
 		
 		return clipSpace;
 	}
@@ -90,7 +92,7 @@ public abstract class Projection {
 		SimpleMatrix clipSpaceB = projectToClipSpace(b);
 		
 		
-		//Frustum clipping (if (-w < x, y, z < w) then the point is valid (z has to be between 0 and w though). If it's outside the w's, then it's clipped, see http://www.songho.ca/opengl/gl_projectionmatrix.html )
+		//Frustum clipping (if (-w <= (x, y) <= w and 0 <= z <= w) then the point is valid. If it's outside the w's, then it's clipped, see http://www.songho.ca/opengl/gl_projectionmatrix.html )
 		
 		//Do frustum clipping/culling:
 		SimpleMatrix[] clipped = clipLine(clipSpaceA, clipSpaceB);
@@ -160,7 +162,7 @@ public abstract class Projection {
 		
 		//NEAR
 		SimpleMatrix pointOnNearPlane = new Point3D(0, 0, 0).asHomogeneousVector();
-		if (a.get(2) < 0) { //z is from 0 to 1.
+		if (a.get(2) < 0) { //z is from 0 to 1, so between 0 and w.
 			a = HelperFunctions.intersectionPointWithPlane(pointOnNearPlane, frustum.near, a, b);
 		} else if (b.get(2) < 0) {
 			b = HelperFunctions.intersectionPointWithPlane(pointOnNearPlane, frustum.near, a, b);
@@ -195,6 +197,10 @@ public abstract class Projection {
 	
 	public SimpleMatrix getProjectionMatrix() {
 		return projectionMatrix;
+	}
+	
+	public SimpleMatrix getViewMatrix() {
+		return cam.getViewMatrix();
 	}
 	
 	protected void calculateViewingFrustumFromProjectionMatrix() {

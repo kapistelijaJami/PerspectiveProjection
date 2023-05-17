@@ -27,7 +27,7 @@ Projection pipeline goes like this:
 		It doesn't have the finished values in x, y and z yet, they still need to be divided by w, which contains the original z value of
 		the view space, which is what creates the perspective effect.
 		Here we would do the frustum culling / clipping (if  -w < x, y, z < w then the point is valid. If it's outside the w's, then it's culled, see http://www.songho.ca/opengl/gl_projectionmatrix.html)
-		The homogeneous coordinates basically have the perspective divide done already, the clip space is just w times bigger than the NDC is. 
+		The homogeneous coordinates basically have the perspective divide done already, the clip space's x, y and z are just w times bigger than in NDC. 
 		And because the w coordinate for homogeneous coordinates will always be used to divide the other coordinates anyway when tranforming it to
 		normal coordinates, it already has the perspective effect applied.
 	Then we have Normalized Device Coordinates (NDC), which is after we divide by w.
@@ -62,9 +62,9 @@ public class PerspectiveProjection extends Projection {
 		
 		//I calculated these myself, differs slightly from opengl one, because I had Zclip going from 0 to 1 instead of -1 to 1
 		double A = f / (n - f);
-		double B = n * A; //was n * f / (n - f)
+		double B = n * A; //was B = n * f / (n - f)
 		
-		double fov = 60; //vertical fov (If you want to use horizontal fov, you just calculate right first, and either divide the right with horizontal aspect, or multiply it with vertical aspect to get top.)
+		double fov = 60; //def: 60, vertical fov (If you want to use horizontal fov, you just calculate right first, and either divide the right with horizontal aspect, or multiply it with vertical aspect to get top.)
 		double aspect = Game.WIDTH / (double) Game.HEIGHT; //horizontal aspect ratio (only used to calculate the right distance from the vertical fov)
 		
 		//Calculate top and right (from the center of the near plane to the edge) with the field of view and aspect ratio:

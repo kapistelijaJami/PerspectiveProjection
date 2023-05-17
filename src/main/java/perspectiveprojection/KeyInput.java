@@ -25,8 +25,9 @@ public class KeyInput implements MouseInputListener, MouseWheelListener, KeyList
 	
 	@Override
 	public void mousePressed(MouseEvent e) {
-		Camera cam = game.getCamera();
-		clickRot = new Point2D(cam.getYaw(), cam.getPitch());
+		double yaw = game.getCurrentYaw();
+		double pitch = game.getCurrentPitch();
+		clickRot = new Point2D(yaw, pitch);
 		clickLoc = e.getPoint();
 		//clickPos = cam.getLoc().copy();
 	}
@@ -50,13 +51,14 @@ public class KeyInput implements MouseInputListener, MouseWheelListener, KeyList
 	public void mouseDragged(MouseEvent e) {
 		Point p = e.getPoint();
 		Point diff = new Point(p.x - clickLoc.x, p.y - clickLoc.y);
-		Camera cam = game.getCamera();
+		//Camera cam = game.getCamera();
 		
 		if (checkMouseButtonMask(e, MouseEvent.BUTTON1_DOWN_MASK)) {
 			double yaw = clickRot.x + diff.x / Math.max(4, 1.5 * 1); // *1 is zoom
 			double pitch = clickRot.y - diff.y / Math.max(4, 1.5 * 1);
 			
-			cam.setYawAndPitch(yaw, pitch);
+			game.newYawAndPitch(yaw, pitch);
+			//cam.setYawAndPitch(yaw, pitch);
 			
 		} else if (checkMouseButtonMask(e, MouseEvent.BUTTON3_DOWN_MASK) || checkMouseButtonMask(e, MouseEvent.BUTTON2_DOWN_MASK)) {
 			/*cam.getLoc().x = (clickPos.x + diff.x / 1); // /1 is zoom
@@ -129,7 +131,7 @@ public class KeyInput implements MouseInputListener, MouseWheelListener, KeyList
 				game.ctrl = true;
 				break;
 			case KeyEvent.VK_L:
-				game.lookAt(new Point3D(100, 100, 100));
+				game.lookAt(new Point3D(0, 0, 0));
 				break;
 		}
 	}

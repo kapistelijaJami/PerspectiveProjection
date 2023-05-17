@@ -4,21 +4,27 @@ import java.awt.Canvas;
 import perspectiveprojection.projections.Projection;
 import java.awt.Color;
 import java.awt.Graphics2D;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import perspectiveprojection.projections.OrthographicProjection;
 import perspectiveprojection.projections.PerspectiveProjection;
 import uilibrary.GameLoop;
 import uilibrary.Window;
 
 public class Game extends GameLoop {
-	private Window window;
+	private final Window window;
 	
 	//perspective good location when translate first, then rotate: loc (586.0, 691.0, 1202.0) yaw -26.0 pitch -153.0
 	//private Camera cam = new Camera(new Point3D(500, 700, 800)); //(new Point3D(-400, 300, 500), -25, 28) works with ortographic (origo might be behind camera). Should be able to work with others with these settings as well
-	private Camera cam = new Camera(new Point3D(400, 500, 800));
-	private Cube cube = new Cube(100);
-	private Cube cameraObject = new Cube(20);
-	private Projection projection = new PerspectiveProjection(cam);
+	private final Camera cam = new Camera(new Point3D(400, 500, 800)); //def: (400, 500, 800)
+	private final Cube cube = new Cube(100, true);
+	private final Cube smallCube = new Cube(70, false);
+	private final Projection projection = new PerspectiveProjection(cam);
 	//private Projection projection = new OrthographicProjection(cam);
+	
+	private final Light[] lights = new Light[] {new Light(800, 1000, 400), new Light(-500, -300, -400)};
+	public static double ambientLight = 0.05; //from 0 to 1
 	
 	public boolean up = false;
 	public boolean down = false;
@@ -32,6 +38,10 @@ public class Game extends GameLoop {
 	public boolean shift = false;
 	public boolean space = false;
 	public boolean ctrl = false;
+	
+	private boolean cameraRotated = false;
+	private double newYaw;
+	private double newPitch;
 	
 	public static int WIDTH = 1280;
 	public static int HEIGHT = 720;
@@ -51,8 +61,8 @@ public class Game extends GameLoop {
 		canvas.addMouseMotionListener(input);
 		canvas.addMouseWheelListener(input);
 		
-		cube.setLocation(new Point3D(100, 100, 100));
-		cameraObject.setLocation(new Point3D(500, 0, 0));
+		cube.setLocation(new Point3D(50, 50, 50));
+		smallCube.setLocation(new Point3D(500, 0, 0));
 	}
 	
 	@Override
@@ -99,30 +109,89 @@ public class Game extends GameLoop {
 		if (ctrl) {
 			cam.moveUp(-speed);
 		}
+		
+		if (cameraRotated) {
+			cam.setYawAndPitch(newYaw, newPitch);
+			cameraRotated = false;
+		}
 	}
 	
 	@Override
 	protected void render() {
 		Graphics2D g = window.getGraphics2D();
-		g.setColor(Color.red);
 		
-		//Point3D cubeOffset = new Point3D(100, 100, 100);
+		renderAxis(g);
 		
-		cube.render(g, projection);
+		List<Renderable> transformed = transformFaces(cube.getWorldSpaceFaces());
+		transformed.addAll(transformFaces(smallCube.getWorldSpaceFaces()));
 		
-		cameraObject.render(g, projection);
 		
-		renderAxis(g, new Point3D());
+		for (Light light : lights) {
+			Point3D p = projection.project(light.location);
+			transformed.add(new Light(p));
+		}
+		transformed.sort(null);
+		
+		for (Renderable obj : transformed) {
+			obj.render(g);
+		}
+		
+		/*cube.renderWireframe(g, projection);
+		smallCube.renderWireframe(g, projection);*/
 		
 		window.display(g);
 	}
 	
+	/**
+	 * Collects the faces, transforms them to screen space and gives the faces color based on the light source.
+	 * @param faces
+	 * @return 
+	 */
+	private List<Renderable> transformFaces(List<Face> faces) {
+		List<Renderable> transformed = new ArrayList<>();
+		for (Face face : faces) {
+			//Calculate color multiplier from light source:
+			Point3D n = face.getFaceNormal();
+			Point3D loc = face.getAverageLocation();
+			
+			double sum = 0;
+			int count = 0;
+			for (Light light : lights) {
+				Point3D lightDir = light.location.subtract(loc).normalize();
+				double dot = n.dot(lightDir);
+				if (dot > 0) {
+					sum += dot;
+					count++;
+				}
+			}
+			
+			double dot = HelperFunctions.clamp(sum / count, ambientLight, 1);
+			face.lightMult = dot;
+			
+			//Transform face to screen space:
+			face = face.applyMatrix(cam.getViewMatrix());
+			//Backface culling:
+			if (face.getFaceNormal().dot(face.getAverageLocation()) >= 0) { //If the normal points to the same direction as camera, we see the back of the face.
+				continue;
+			}
+			
+			face = face.applyMatrix(projection.getProjectionMatrix());
+			//TODO: do frustum clipping/culling
+			
+			face = ViewportTransformation.fromClipSpaceToScreenSpace(face, WIDTH, HEIGHT);
+			transformed.add(face);
+		}
+		return transformed;
+	}
+	
 	//Right hand rule, X is red (thumb, to right), Y is green (index, to up), Z is blue (middle, towards cam)
-	private void renderAxis(Graphics2D g, Point3D offset) {
-		Point3D start = new Point3D(0, 0, 0).add(offset);
+	private void renderAxis(Graphics2D g) {
+		int axisLength = 10000;
+		
+		Point3D start = new Point3D(0, 0, 0);
 		//Point3D s = projection.project(start);
 		
-		Point3D xAxis = new Point3D(1000, 0, 0).add(offset);
+		Point3D xAxis = new Point3D(axisLength, 0, 0);
 		LineSegment x = projection.projectLineSegment(start, xAxis);
 		
 		if (x != null) {
@@ -130,7 +199,7 @@ public class Game extends GameLoop {
 		}
 		
 		
-		Point3D yAxis = new Point3D(0, 1000, 0).add(offset);
+		Point3D yAxis = new Point3D(0, axisLength, 0);
 		LineSegment y = projection.projectLineSegment(start, yAxis);
 		
 		if (y != null) {
@@ -138,7 +207,7 @@ public class Game extends GameLoop {
 		}
 		
 		
-		Point3D zAxis = new Point3D(0, 0, 1000).add(offset);
+		Point3D zAxis = new Point3D(0, 0, axisLength);
 		LineSegment z = projection.projectLineSegment(start, zAxis);
 		
 		if (z != null) {
@@ -152,5 +221,25 @@ public class Game extends GameLoop {
 
 	public void lookAt(Point3D point3D) {
 		cam.lookAt(point3D);
+	}
+
+	public void newYawAndPitch(double yaw, double pitch) {
+		newYaw = yaw;
+		newPitch = pitch;
+		cameraRotated = true;
+	}
+
+	public double getCurrentYaw() {
+		if (cameraRotated) {
+			return newYaw;
+		}
+		return cam.getYaw();
+	}
+
+	public double getCurrentPitch() {
+		if (cameraRotated) {
+			return newPitch;
+		}
+		return cam.getPitch();
 	}
 }

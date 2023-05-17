@@ -6,21 +6,36 @@ import java.awt.GradientPaint;
 import java.awt.Graphics2D;
 import java.awt.Paint;
 import java.awt.Point;
+import java.util.ArrayList;
+import java.util.List;
 import org.ejml.simple.SimpleMatrix;
 
 public class Cube {
-	private SimpleMatrix modelMatrix; //Converts the object from model space to world space. Contains the information for object location, scale and rotation.
-	//private double cubeSize;
+	private final SimpleMatrix modelMatrix; //Converts the object from model space to world space. Contains the information for object location, scale and rotation.
+
+	private final List<Face> faces = new ArrayList<>();
 	
-	//points are between negative cubeSize and positive cubeSize
-	private Point3D[] starts = new Point3D[12];
-	private Point3D[] ends = new Point3D[12];
-	
-	public Cube(double cubeSize) { //if cube size is 100, then the whole cube is 200x200x200, because it will be -100 to 100 around the offset that's sent to render.
-		//this.cubeSize = cubeSize;
-		modelMatrix = SimpleMatrix.diag(cubeSize, cubeSize, cubeSize, 1);
+	public Cube(double cubeSize, boolean multipleColors) { //if cube size is 100, then the cube is 100x100x100, it will be -50 to 50 around origo if no other transformations are added.
+		modelMatrix = SimpleMatrix.diag(cubeSize / 2, cubeSize / 2, cubeSize / 2, 1);
 		
-		int offset = 1;
+		faces.add(new Face(new Point3D(-1, 1, 1), new Point3D(-1, -1, 1), new Point3D(1, -1, 1), new Point3D(1, 1, 1))); //front
+		faces.add(new Face(new Point3D(1, 1, 1), new Point3D(1, -1, 1), new Point3D(1, -1, -1), new Point3D(1, 1, -1))); //right
+		faces.add(new Face(new Point3D(-1, 1, -1), new Point3D(-1, -1, -1), new Point3D(-1, -1, 1), new Point3D(-1, 1, 1))); //left
+		faces.add(new Face(new Point3D(1, 1, -1), new Point3D(1, -1, -1), new Point3D(-1, -1, -1), new Point3D(-1, 1, -1))); //back
+		faces.add(new Face(new Point3D(-1, -1, -1), new Point3D(1, -1, -1), new Point3D(1, -1, 1), new Point3D(-1, -1, 1))); //bottom
+		faces.add(new Face(new Point3D(-1, 1, -1), new Point3D(-1, 1, 1), new Point3D(1, 1, 1), new Point3D(1, 1, -1))); //top
+		
+		if (multipleColors) {
+			faces.get(0).color = Color.RED;
+			faces.get(1).color = Color.BLUE;
+			faces.get(2).color = Color.ORANGE;
+			faces.get(3).color = Color.PINK;
+			faces.get(4).color = Color.CYAN;
+			faces.get(5).color = Color.GREEN;
+		}
+		
+		
+		/*int offset = 1;
 		
 		//4 corners that are not touching each other all have 3 unique lines. Those define the whole cube.
 		//So 3 lines start from the same point, then the next point same thing etc. starts[0] connects to ends[0] etc.
@@ -49,16 +64,16 @@ public class Cube {
 			} else if (mod == 2) {
 				ends[i] = p.negateZ();
 			}
-		}
+		}*/
 	}
 	
 	public void setLocation(Point3D loc) {
-		modelMatrix.setColumn(3, 0, loc.x, loc.y, loc.z);
+		modelMatrix.setColumn(3, 0, loc.x, loc.y, loc.z); //TODO: probably wrong when rotation and scale is in matrix
 	}
 	
-	public void render(Graphics2D g, Projection projection) {
+	public void renderWireframe(Graphics2D g, Projection projection) {
 		//color this corner red:
-		Point3D vertex = new Point3D(1, 1, 1);
+		//Point3D vertex = new Point3D(1, 1, 1);
 		
 		/*LineSegment p = projection.projectLineSegment(modelMatrix.mult(starts[1].asHomogeneousMatrix()), modelMatrix.mult(ends[1].asHomogeneousMatrix()));
 		if (p == null) {
@@ -69,9 +84,30 @@ public class Cube {
 			//g.fillOval((int) p.getEnd().x, (int) p.getEnd().y, 3, 3);
 		}*/
 		
+		for (Face face : getWorldSpaceFaces()) {
+			
+			LineSegment[] lines = face.getLines();
+			for (LineSegment line : lines) {
+				line = projection.projectLineSegment(line);
+				if (line == null) {
+					continue;
+				}
+				line.render(g);
+			}
+			
+			
+			
+			/*face = face.applyMatrix(projection.getViewMatrix());
+			face = face.applyMatrix(projection.getProjectionMatrix());
+			face = ViewportTransformation.fromClipSpaceToScreenSpace(face, Game.WIDTH, Game.HEIGHT);
+			LineSegment[] lines = face.getLines();
+			for (LineSegment line : lines) {
+				line.render(g);
+			}*/
+		}
 		
 		
-		for (int i = 0; i < starts.length; i++) {
+		/*for (int i = 0; i < starts.length; i++) {
 			Point3D start = starts[i];
 			Point3D end = ends[i];
 			
@@ -96,6 +132,20 @@ public class Cube {
 			}
 			
 			line.render(g, paint);
+		}*/
+	}
+	
+	public List<Face> getLocalFaces() {
+		return faces;
+	}
+	
+	public List<Face> getWorldSpaceFaces() {
+		List<Face> transformed = new ArrayList<>();
+		
+		for (Face face : faces) {
+			transformed.add(face.applyMatrix(modelMatrix));
 		}
+		
+		return transformed;
 	}
 }
