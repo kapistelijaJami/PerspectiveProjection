@@ -195,46 +195,6 @@ public class Camera {
 		viewMatrix = viewMatrix.invert();
 	}
 	
-	/*public void orbitAroundPointHorizontal(Point3D point, double amount) {
-		viewMatrix = viewMatrix.invert();
-		
-		SimpleMatrix rotationMatrix = HelperFunctions.getRotationMatrixAroundY4By4(-amount);
-		SimpleMatrix translationByPoint = HelperFunctions.getTranslationMatrix(point.negated());
-		SimpleMatrix translateBack = HelperFunctions.getTranslationMatrix(point);
-		
-		viewMatrix = translationByPoint.mult(viewMatrix);
-		viewMatrix = rotationMatrix.mult(viewMatrix);
-		viewMatrix = translateBack.mult(viewMatrix);
-		
-		location = Point3D.fromMatrix(viewMatrix.extractVector(false, 3));
-		viewMatrix = viewMatrix.invert();
-	}
-	
-	public void orbitAroundPointVertical(Point3D point, double amount) {
-		Point3D forward = getForward();
-		Point3D left = getLeft();
-		
-		Point3D UP = Point3D.getUP();
-		if (amount < 0) { //pitching down, so we want DOWN vector instead
-			UP.negate();
-		}
-		double maxAngle = Math.max(0, Point3D.angleBetweenUnitVectors(forward, UP) - 1); //Stays 1 degree off from vertical
-		amount = HelperFunctions.clamp(amount, -maxAngle, maxAngle);
-		
-		viewMatrix = viewMatrix.invert();
-		
-		SimpleMatrix rotationMatrix = HelperFunctions.getRotationMatrixAroundAxis4By4(left, -amount); //Positive amount is look up, with right hand rule amount should be negative
-		SimpleMatrix translationByPoint = HelperFunctions.getTranslationMatrix(point.negated());
-		SimpleMatrix translateBack = HelperFunctions.getTranslationMatrix(point);
-		
-		viewMatrix = translationByPoint.mult(viewMatrix);
-		viewMatrix = rotationMatrix.mult(viewMatrix);
-		viewMatrix = translateBack.mult(viewMatrix);
-		
-		location = Point3D.fromMatrix(viewMatrix.extractVector(false, 3));
-		viewMatrix = viewMatrix.invert();
-	}*/
-	
 	/**
 	 * Sets the direction based off the input vector.
 	 * @param forward 

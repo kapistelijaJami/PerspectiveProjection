@@ -188,7 +188,7 @@ public class Game extends GameLoop {
 			if (r == null) {
 				continue;
 			}
-			r.render(g, Color.YELLOW);
+			r.render(g, Color.YELLOW, 10, 10);
 		}
 		
 		/*cube.renderWireframe(g, projection);
@@ -205,13 +205,15 @@ public class Game extends GameLoop {
 	private void renderAxis(Graphics2D g) {
 		int axisLength = 10000;
 		
+		double pointSize = 5;
+		
 		Point3D start = new Point3D(0, 0, 0);
 		
 		Point3D xAxis = new Point3D(axisLength, 0, 0);
 		LineSegment x = projection.projectLineSegment(start, xAxis);
 		
 		if (x != null) {
-			x.render(g, Color.red);
+			x.render(g, Color.red, pointSize, pointSize);
 		}
 		
 		
@@ -219,7 +221,7 @@ public class Game extends GameLoop {
 		LineSegment y = projection.projectLineSegment(start, yAxis);
 		
 		if (y != null) {
-			y.render(g, Color.green);
+			y.render(g, Color.green, pointSize, pointSize);
 		}
 		
 		
@@ -227,7 +229,7 @@ public class Game extends GameLoop {
 		LineSegment z = projection.projectLineSegment(start, zAxis);
 		
 		if (z != null) {
-			z.render(g, Color.blue);
+			z.render(g, Color.blue, pointSize, pointSize);
 		}
 	}
 	
@@ -304,11 +306,11 @@ public class Game extends GameLoop {
 	public void focusSelected() {
 		if (selected == null) {
 			cam.lookAt(new Point3D());
-			cam.setLoc(cam.getForward().negated().mult(1000));
+			cam.setLoc(cam.getForward().negated().mult(700));
 		} else {
 			BoundingBox bounds = selected.getBoundingBox();
 			Point3D middle = bounds.getMiddle();
-			double size = bounds.size / 2;
+			double size = bounds.size;
 			
 			double dist = size / Math.sin(Math.toRadians(FOV / 2.0));
 			

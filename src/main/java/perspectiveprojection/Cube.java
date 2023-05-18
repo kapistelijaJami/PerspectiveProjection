@@ -69,67 +69,31 @@ public class Cube implements GameObject {
 	}
 	
 	public void renderWireframe(Graphics2D g, Projection projection) {
-		//color this corner red:
-		//Point3D vertex = new Point3D(1, 1, 1);
-		
-		/*LineSegment p = projection.projectLineSegment(modelMatrix.mult(starts[1].asHomogeneousMatrix()), modelMatrix.mult(ends[1].asHomogeneousMatrix()));
-		if (p == null) {
-			System.out.println("tuli");
-			return;
-		} else {
-			//g.setColor(Color.BLUE);
-			//g.fillOval((int) p.getEnd().x, (int) p.getEnd().y, 3, 3);
-		}*/
-		
 		for (Face face : getWorldSpaceFaces()) {
 			
 			LineSegment[] lines = face.getLines();
 			for (LineSegment line : lines) {
+				Point3D start = line.getStart();
+				Point3D end = line.getEnd();
 				line = projection.projectLineSegment(line);
 				if (line == null) {
 					continue;
 				}
-				line.render(g);
+				
+				int pointSize = 10;
+				Double startSize = projection.getProjectedSize(start, pointSize);
+				Double endSize = projection.getProjectedSize(end, pointSize);
+				if (startSize == null) {
+					startSize = (double) pointSize;
+				}
+				if (endSize == null) {
+					endSize = (double) pointSize;
+				}
+				double sRadius = Math.max(startSize / 2, 5);
+				double eRadius = Math.max(endSize / 2, 5);
+				line.render(g, sRadius, eRadius);
 			}
-			
-			
-			
-			/*face = face.applyMatrix(projection.getViewMatrix());
-			face = face.applyMatrix(projection.getProjectionMatrix());
-			face = ViewportTransformation.fromClipSpaceToScreenSpace(face, Game.WIDTH, Game.HEIGHT);
-			LineSegment[] lines = face.getLines();
-			for (LineSegment line : lines) {
-				line.render(g);
-			}*/
 		}
-		
-		
-		/*for (int i = 0; i < starts.length; i++) {
-			Point3D start = starts[i];
-			Point3D end = ends[i];
-			
-			SimpleMatrix worldS = modelMatrix.mult(start.asHomogeneousVector());
-			SimpleMatrix worldE = modelMatrix.mult(end.asHomogeneousVector());
-			
-			LineSegment line = projection.projectLineSegment(Point3D.fromMatrix(worldS), Point3D.fromMatrix(worldE));
-			
-			
-			if (line == null) { //the whole line is outside the near and far clipping planes
-				continue;
-			}
-			
-			Point s = line.getStartAs2DInt();
-			Point e = line.getEndAs2DInt();
-			
-			Paint paint = new GradientPaint(s, Color.white, e, Color.white);
-			if (start.equals(vertex)) {
-				paint = new GradientPaint(s, Color.red, e, Color.white);
-			} else if (end.equals(vertex)) {
-				paint = new GradientPaint(s, Color.white, e, Color.red);
-			}
-			
-			line.render(g, paint);
-		}*/
 	}
 	
 	public List<Face> getLocalFaces() {
