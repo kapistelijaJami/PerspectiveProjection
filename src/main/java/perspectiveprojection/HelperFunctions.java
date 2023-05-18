@@ -175,21 +175,66 @@ public class HelperFunctions {
 		return new Point3D(x, y, z);
 	}*/
 	
-	public static SimpleMatrix intersectionPointWithPlane(SimpleMatrix pointOnPlane, SimpleMatrix normal, SimpleMatrix start, SimpleMatrix end) {
-		SimpleMatrix dir = end.minus(start);
-		
+	/**
+	 * Calculates the t value for the intersection with line and plane.
+	 * T value will be 0 when intersection is at the start, and 1 when
+	 * one dir length forward, and negative when to the opposite direction.
+	 * So length of dir matters, t value will be in units of dir length.
+	 * Will return null if intersection is not possible because the line and plane are parallel.
+	 * @param pointOnPlane
+	 * @param normal
+	 * @param start
+	 * @param dir
+	 * @return 
+	 */
+	public static Double getLinePlaneIntersectionTValue(SimpleMatrix pointOnPlane, SimpleMatrix normal, SimpleMatrix start, SimpleMatrix dir) {
 		double denominator = normal.dot(dir);
 		if (denominator == 0) { //Line and plane are parallel, no intersection possible
 			return null;
 		}
 		
 		SimpleMatrix planeToPoint = pointOnPlane.minus(start);
-		double t = planeToPoint.dot(normal) / denominator;
-		if (t < 0 || t > 1) { //Intersection point is outside the line segment
+		return planeToPoint.dot(normal) / denominator; //Calculate t value
+	}
+	
+	public static SimpleMatrix intersectionPointWithPlane(SimpleMatrix pointOnPlane, SimpleMatrix normal, SimpleMatrix start, SimpleMatrix end) {
+		SimpleMatrix dir = end.minus(start);
+		
+		Double t = getLinePlaneIntersectionTValue(pointOnPlane, normal, start, dir);
+		
+		if (t == null || t < 0 || t > 1) { //Intersection point is outside the line segment
 			return null;
 		}
 		
 		return start.plus(dir.scale(t));
+	}
+	
+	public static double distanceToLineSegment(Point3D p, LineSegment line) {
+		return distanceToLine(p, line.getStart(), line.getEnd());
+	}
+	
+	public static double distanceToLineSegment(Point3D p, Point3D start, Point3D end) { //Only between start and end. If projection is outside, distance to ends are used.
+		Point3D dir = end.subtract(start);
+		Point3D startToP = p.subtract(start);
+		
+		if (startToP.dot(dir) <= 0) { //Use start point
+			return startToP.magnitude();
+		}
+		
+		Point3D endToP = p.subtract(end);
+		if (endToP.dot(dir) >= 0) { //Use end point
+			return endToP.magnitude();
+		}
+		
+		return distanceToLine(p, start, dir);
+	}
+	
+	public static double distanceToLine(Point3D p, Point3D pointOnLine, Point3D dir) { //infinite line, goes through pointOnLine
+		dir.normalize();
+		double t = p.subtract(pointOnLine).dot(dir);
+		Point3D projection = pointOnLine.add(dir.mult(t));
+		
+		return projection.subtract(p).magnitude();
 	}
 	
 	public static SimpleMatrix normalize4DVector(SimpleMatrix v) {
@@ -203,5 +248,128 @@ public class HelperFunctions {
 			return v;
 		}
 		return v.divide(magnitude);
+	}
+	
+	public static SimpleMatrix getRotationMatrixAroundX3By3(double degrees) {
+		double rad = Math.toRadians(degrees);
+		SimpleMatrix m = new SimpleMatrix(
+				new double[][] {
+					{1, 0, 0},
+					{0, Math.cos(rad), -Math.sin(rad)},
+					{0, Math.sin(rad), Math.cos(rad)}
+				});
+		return m;
+	}
+	
+	public static SimpleMatrix getRotationMatrixAroundY3By3(double degrees) {
+		double rad = Math.toRadians(degrees);
+		SimpleMatrix m = new SimpleMatrix(
+				new double[][] {
+					{Math.cos(rad), 0, Math.sin(rad)},
+					{0, 1, 0},
+					{-Math.sin(rad), 0, Math.cos(rad)}
+				});
+		return m;
+	}
+	
+	public static SimpleMatrix getRotationMatrixAroundZ3By3(double degrees) {
+		double rad = Math.toRadians(degrees);
+		SimpleMatrix m = new SimpleMatrix(
+				new double[][] {
+					{Math.cos(rad), -Math.sin(rad), 0},
+					{Math.sin(rad), Math.cos(rad), 0},
+					{0, 0, 1}
+				});
+		return m;
+	}
+	
+	public static SimpleMatrix getRotationMatrixAroundAxis3By3(Point3D axis, double degrees) { //rotates with right hand rule (thumb towards axis positive direction and curled fingers are positive)
+		//Uses the Rodrigues' rotation formula
+		axis = axis.normalized();
+		
+		double cosTheta = Math.cos(Math.toRadians(degrees));
+		double sinTheta = Math.sin(Math.toRadians(degrees));
+		double oneMinusCosTheta = 1 - cosTheta;
+		
+		double ux = axis.x;
+		double uy = axis.y;
+		double uz = axis.z;
+		
+		SimpleMatrix m = new SimpleMatrix(
+				new double[][] {
+					{cosTheta + ux * ux * oneMinusCosTheta,			ux * uy * oneMinusCosTheta - uz * sinTheta,		ux * uz * oneMinusCosTheta + uy * sinTheta},
+					{uy * ux * oneMinusCosTheta + uz * sinTheta,	cosTheta + uy * uy * oneMinusCosTheta,			uy * uz * oneMinusCosTheta - ux * sinTheta},
+					{uz * ux * oneMinusCosTheta - uy * sinTheta,	uz * uy * oneMinusCosTheta + ux * sinTheta,		cosTheta + uz * uz * oneMinusCosTheta}
+				});
+		return m;
+	}
+	
+	public static SimpleMatrix getRotationMatrixAroundX4By4(double degrees) {
+		double rad = Math.toRadians(degrees);
+		SimpleMatrix m = new SimpleMatrix(
+				new double[][] {
+					{1,             0,              0, 0},
+					{0, Math.cos(rad), -Math.sin(rad), 0},
+					{0, Math.sin(rad),  Math.cos(rad), 0},
+					{0,             0,              0, 1}
+				});
+		return m;
+	}
+	
+	public static SimpleMatrix getRotationMatrixAroundY4By4(double degrees) {
+		double rad = Math.toRadians(degrees);
+		SimpleMatrix m = new SimpleMatrix(
+				new double[][] {
+					{ Math.cos(rad), 0, Math.sin(rad), 0},
+					{             0, 1,             0, 0},
+					{-Math.sin(rad), 0, Math.cos(rad), 0},
+					{             0, 0,             0, 1}
+				});
+		return m;
+	}
+	
+	public static SimpleMatrix getRotationMatrixAroundZ4By4(double degrees) {
+		double rad = Math.toRadians(degrees);
+		SimpleMatrix m = new SimpleMatrix(
+				new double[][] {
+					{Math.cos(rad), -Math.sin(rad), 0, 0},
+					{Math.sin(rad),  Math.cos(rad), 0, 0},
+					{            0,              0, 1, 0},
+					{            0,              0, 0, 1}
+				});
+		return m;
+	}
+	
+	public static SimpleMatrix getTranslationMatrix(Point3D amount) {
+		SimpleMatrix m = new SimpleMatrix(
+				new double[][] {
+					{1, 0, 0, amount.x},
+					{0, 1, 0, amount.y},
+					{0, 0, 1, amount.z},
+					{0, 0, 0,        1}
+				});
+		return m;
+	}
+	
+	public static SimpleMatrix getRotationMatrixAroundAxis4By4(Point3D axis, double degrees) { //rotates with right hand rule (thumb towards axis positive direction and curled fingers are positive)
+		//Uses the Rodrigues' rotation formula
+		axis = axis.normalized();
+		
+		double cosTheta = Math.cos(Math.toRadians(degrees));
+		double sinTheta = Math.sin(Math.toRadians(degrees));
+		double oneMinusCosTheta = 1 - cosTheta;
+		
+		double ux = axis.x;
+		double uy = axis.y;
+		double uz = axis.z;
+		
+		SimpleMatrix m = new SimpleMatrix(
+				new double[][] {
+					{cosTheta + ux * ux * oneMinusCosTheta,			ux * uy * oneMinusCosTheta - uz * sinTheta,		ux * uz * oneMinusCosTheta + uy * sinTheta, 0},
+					{uy * ux * oneMinusCosTheta + uz * sinTheta,	cosTheta + uy * uy * oneMinusCosTheta,			uy * uz * oneMinusCosTheta - ux * sinTheta, 0},
+					{uz * ux * oneMinusCosTheta - uy * sinTheta,	uz * uy * oneMinusCosTheta + ux * sinTheta,		cosTheta + uz * uz * oneMinusCosTheta, 0},
+					{            0,              0,               0,             1}
+				});
+		return m;
 	}
 }

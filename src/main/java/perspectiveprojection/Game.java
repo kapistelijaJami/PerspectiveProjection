@@ -5,6 +5,7 @@ import perspectiveprojection.projections.Projection;
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import perspectiveprojection.projections.OrthographicProjection;
 import perspectiveprojection.projections.PerspectiveProjection;
@@ -40,11 +41,17 @@ public class Game extends GameLoop {
 	public boolean ctrl = false;
 	
 	private boolean cameraRotated = false;
-	private double newYaw;
-	private double newPitch;
+	private boolean cameraOrbit = false;
+	private Double newYaw = null;
+	private Double newPitch = null;
 	
 	public static int WIDTH = 1280;
 	public static int HEIGHT = 720;
+	public static int FOV = 60; //def: 60, vertical FOV
+	
+	private GameObject selected;
+	
+	private final List<Ray> rays = new ArrayList<>();
 	
 	public Game(int fps) {
 		super(fps);
@@ -73,22 +80,25 @@ public class Game extends GameLoop {
 	@Override
 	protected void update() {
 		double speed = 0.5;
+		Point3D orbitPoint = getOrbitPoint();
 		if (up) {
-			cam.pitch(speed);
+			//cam.pitch(speed);
+			//cam.orbitAroundPointVertical(orbitPoint, speed);
 		}
 		if (down) {
-			cam.pitch(-speed);
+			//cam.pitch(-speed);
+			//cam.orbitAroundPointVertical(orbitPoint, -speed);
 		}
 		if (left) {
-			cam.turn(-speed);
-			//cam.turnRelativeToWorld(-speed);
+			//cam.turn(-speed);
+			//cam.orbitAroundPointHorizontal(orbitPoint, -speed);
 		}
 		if (right) {
-			cam.turn(speed);
-			//cam.turnRelativeToWorld(speed);
+			//cam.turn(speed);
+			//cam.orbitAroundPointHorizontal(orbitPoint, speed);
 		}
 		
-		speed *= 10;
+		speed *= 5;
 		
 		if (w) {
 			cam.moveForward(speed);
@@ -104,16 +114,47 @@ public class Game extends GameLoop {
 		}
 		
 		if (shift || space) {
-			cam.moveUp(speed);
+			//cam.moveUp(speed);
+			cam.moveUpLocal(speed);
 		}
 		if (ctrl) {
-			cam.moveUp(-speed);
+			//cam.moveUp(-speed);
+			cam.moveUpLocal(-speed);
 		}
 		
 		if (cameraRotated) {
 			cam.setYawAndPitch(newYaw, newPitch);
 			cameraRotated = false;
 		}
+		if (cameraOrbit) {
+			/*cam.orbitAroundPointHorizontal(orbitPoint, newYaw - cam.getYaw()); //Horizontal should be before vertical
+			cam.orbitAroundPointVertical(orbitPoint, newPitch - cam.getPitch());*/
+			
+			cam.orbitAroundPoint(orbitPoint, newYaw - cam.getYaw(), newPitch - cam.getPitch());
+			
+			cameraOrbit = false;
+		}
+		
+		for (int i = 0; i < rays.size(); i++) {
+			Ray ray = rays.get(i);
+			if (ray.creationTime + 5000 < System.currentTimeMillis()) {
+				rays.remove(i);
+				i--;
+			}
+		}
+	}
+	
+	private Point3D getOrbitPoint() {
+		Point3D p = null;
+		if (selected != null) {
+			if (selected instanceof HasBoundingBox) {
+				p = ((HasBoundingBox) selected).getBoundingBox().getMiddle();
+			}
+		}
+		if (p == null) {
+			p = cam.getLoc().add(cam.getForward().mult(1000));
+		}
+		return p;
 	}
 	
 	@Override
@@ -125,19 +166,37 @@ public class Game extends GameLoop {
 		List<Renderable> transformed = projection.projectFaces(cube.getWorldSpaceFaces(), lights);
 		transformed.addAll(projection.projectFaces(smallCube.getWorldSpaceFaces(), lights));
 		
-		
 		for (Light light : lights) {
 			Point3D p = projection.project(light.location);
-			transformed.add(new Light(p));
+			
+			Double size = projection.getProjectedSize(light.location, light.size);
+			if (size == null) {
+				continue;
+			}
+			transformed.add(new Light(p, size));
 		}
+		
 		transformed.sort(null);
 		
 		for (Renderable obj : transformed) {
 			obj.render(g);
 		}
 		
+		for (Ray ray : rays) {
+			LineSegment r = ray.ray;
+			r = projection.projectLineSegment(r);
+			if (r == null) {
+				continue;
+			}
+			r.render(g, Color.YELLOW);
+		}
+		
 		/*cube.renderWireframe(g, projection);
 		smallCube.renderWireframe(g, projection);*/
+		
+		if (selected != null) {
+			selected.renderSelected(g, projection);
+		}
 		
 		window.display(g);
 	}
@@ -147,7 +206,6 @@ public class Game extends GameLoop {
 		int axisLength = 10000;
 		
 		Point3D start = new Point3D(0, 0, 0);
-		//Point3D s = projection.project(start);
 		
 		Point3D xAxis = new Point3D(axisLength, 0, 0);
 		LineSegment x = projection.projectLineSegment(start, xAxis);
@@ -183,21 +241,81 @@ public class Game extends GameLoop {
 
 	public void newYawAndPitch(double yaw, double pitch) {
 		newYaw = yaw;
-		newPitch = pitch;
+		newPitch = HelperFunctions.clamp(pitch, -89, 89);
 		cameraRotated = true;
 	}
 
+	public void orbit(double yaw, double pitch) {
+		newYaw = yaw;
+		newPitch = HelperFunctions.clamp(pitch, -89, 89);
+		cameraOrbit = true;
+	}
+
 	public double getCurrentYaw() {
-		if (cameraRotated) {
-			return newYaw;
+		if (newYaw == null) {
+			return cam.getYaw();
 		}
-		return cam.getYaw();
+		return newYaw;
 	}
 
 	public double getCurrentPitch() {
-		if (cameraRotated) {
-			return newPitch;
+		if (newPitch == null) {
+			return cam.getPitch();
 		}
-		return cam.getPitch();
+		return newPitch;
+	}
+	
+	//Performs raycasting to select objects.
+	public void click(int x, int y, boolean renderRay) {
+		double rayLength = 10000;
+		
+		Point3D start = cam.getLoc();
+		Point3D rayAtNearPlane = ViewportTransformation.fromScreenSpaceToClipSpace(new Point2D(x, y), WIDTH, HEIGHT);
+		rayAtNearPlane = Point3D.fromMatrixDivideByW(projection.fromClipSpaceToWorldSpace(rayAtNearPlane));
+		Point3D dir = rayAtNearPlane.subtract(start).normalize();
+		if (renderRay) {
+			rays.add(new Ray(new LineSegment(start, start.add(dir.mult(rayLength)))));
+		}
+		
+		List<HasBoundingBox> objects = getObjectsAsBoundingBoxes();
+		for (HasBoundingBox object : objects) {
+			BoundingBox bounds = object.getBoundingBox();
+			if (bounds.lineIntersection(start, dir, rayLength)) { //TODO: get t value and keep track of closest
+				if (object instanceof GameObject) {
+					selected = (GameObject) object;
+					return;
+				}
+			}
+		}
+		
+		selected = null;
+	}
+	
+	private List<HasBoundingBox> getObjectsAsBoundingBoxes() {
+		List<HasBoundingBox> objects = new ArrayList<>();
+		
+		objects.add(cube);
+		objects.add(smallCube);
+		objects.addAll(Arrays.asList(lights));
+		
+		return objects;
+	}
+
+	public void focusSelected() {
+		if (selected == null) {
+			cam.lookAt(new Point3D());
+			cam.setLoc(cam.getForward().negated().mult(1000));
+		} else {
+			BoundingBox bounds = selected.getBoundingBox();
+			Point3D middle = bounds.getMiddle();
+			double size = bounds.size / 2;
+			
+			double dist = size / Math.sin(Math.toRadians(FOV / 2.0));
+			
+			cam.lookAt(middle);
+			cam.setLoc(middle.subtract(cam.getForward().mult(dist)));
+		}
+		newYaw = cam.getYaw();
+		newPitch = cam.getPitch();
 	}
 }

@@ -64,7 +64,7 @@ public class PerspectiveProjection extends Projection {
 		double A = f / (n - f);
 		double B = n * A; //was B = n * f / (n - f)
 		
-		double fov = 60; //def: 60, vertical fov (If you want to use horizontal fov, you just calculate right first, and either divide the right with horizontal aspect, or multiply it with vertical aspect to get top.)
+		double fov = Game.FOV; //def: 60, vertical fov (If you want to use horizontal fov, you just calculate right first, and either divide the right with horizontal aspect, or multiply it with vertical aspect to get top.)
 		double aspect = Game.WIDTH / (double) Game.HEIGHT; //horizontal aspect ratio (only used to calculate the right distance from the vertical fov)
 		
 		//Calculate top and right (from the center of the near plane to the edge) with the field of view and aspect ratio:

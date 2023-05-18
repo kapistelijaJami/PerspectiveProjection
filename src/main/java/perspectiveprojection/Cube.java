@@ -2,15 +2,12 @@ package perspectiveprojection;
 
 import perspectiveprojection.projections.Projection;
 import java.awt.Color;
-import java.awt.GradientPaint;
 import java.awt.Graphics2D;
-import java.awt.Paint;
-import java.awt.Point;
 import java.util.ArrayList;
 import java.util.List;
 import org.ejml.simple.SimpleMatrix;
 
-public class Cube {
+public class Cube implements GameObject {
 	private final SimpleMatrix modelMatrix; //Converts the object from model space to world space. Contains the information for object location, scale and rotation.
 
 	private final List<Face> faces = new ArrayList<>();
@@ -147,5 +144,19 @@ public class Cube {
 		}
 		
 		return transformed;
+	}
+
+	@Override
+	public List<SimpleMatrix> getListOfPoints() {
+		List<SimpleMatrix> points = new ArrayList<>();
+		for (Face face : getWorldSpaceFaces()) {
+			points.addAll(face.getListOfPoints());
+		}
+		return points;
+	}
+
+	@Override
+	public void renderSelected(Graphics2D g, Projection projection) {
+		renderWireframe(g, projection);
 	}
 }

@@ -54,8 +54,8 @@ public class Point3D {
 		return "(" + x + ", " + y + ", " + z + ")";
 	}
 	
-	public Point3D add(double add) {
-		return add(add, add, add);
+	public Point3D add(double a) {
+		return add(a, a, a);
 	}
 	
 	public Point3D add(Point3D o) {
@@ -64,6 +64,10 @@ public class Point3D {
 	
 	public Point3D add(double x, double y, double z) {
 		return new Point3D(this.x + x, this.y + y, this.z + z);
+	}
+
+	public Point3D subtract(double a) {
+		return subtract(a, a, a);
 	}
 	
 	public Point3D subtract(Point3D o) {
@@ -85,63 +89,42 @@ public class Point3D {
 		return new Point3D(this.x / w, this.y / w, this.z / w);
 	}
 	
+	public double get(int i) {
+		if (i == 0) {
+			return x;
+		}
+		if (i == 1) {
+			return y;
+		}
+		if (i == 2) {
+			return z;
+		}
+		return 0;
+	}
+	
 	public Point3D rotatedX(double degrees) { //rotates with right hand rule (thumb towards x-axis and curled fingers are positive)
-		double rad = Math.toRadians(degrees);
-		SimpleMatrix m = new SimpleMatrix(
-				new double[][] {
-					{1, 0, 0},
-					{0, Math.cos(rad), -Math.sin(rad)},
-					{0, Math.sin(rad), Math.cos(rad)}
-				});
+		SimpleMatrix m = HelperFunctions.getRotationMatrixAroundX3By3(degrees);
 		
 		SimpleMatrix res = m.mult(asMatrix());
 		return new Point3D(res.get(0), res.get(1), res.get(2));
 	}
 	
 	public Point3D rotatedY(double degrees) { //rotates with right hand rule (thumb towards y-axis and curled fingers are positive)
-		double rad = Math.toRadians(degrees);
-		SimpleMatrix m = new SimpleMatrix(
-				new double[][] {
-					{Math.cos(rad), 0, Math.sin(rad)},
-					{0, 1, 0},
-					{-Math.sin(rad), 0, Math.cos(rad)}
-				});
+		SimpleMatrix m = HelperFunctions.getRotationMatrixAroundY3By3(degrees);
 		
 		SimpleMatrix res = m.mult(asMatrix());
 		return new Point3D(res.get(0), res.get(1), res.get(2));
 	}
 	
 	public Point3D rotatedZ(double degrees) { //rotates with right hand rule (thumb towards z-axis and curled fingers are positive)
-		double rad = Math.toRadians(degrees);
-		SimpleMatrix m = new SimpleMatrix(
-				new double[][] {
-					{Math.cos(rad), -Math.sin(rad), 0},
-					{Math.sin(rad), Math.cos(rad), 0},
-					{0, 0, 1}
-				});
+		SimpleMatrix m = HelperFunctions.getRotationMatrixAroundZ3By3(degrees);
 		
 		SimpleMatrix res = m.mult(asMatrix());
 		return new Point3D(res.get(0), res.get(1), res.get(2));
 	}
 	
 	public Point3D rotateAroundAxis(Point3D axis, double degrees) { //rotates with right hand rule (thumb towards axis positive direction and curled fingers are positive)
-		//Uses the Rodrigues' rotation formula
-		axis = axis.normalized();
-		
-		double cosTheta = Math.cos(Math.toRadians(degrees));
-		double sinTheta = Math.sin(Math.toRadians(degrees));
-		double oneMinusCosTheta = 1 - cosTheta;
-		
-		double ux = axis.x;
-		double uy = axis.y;
-		double uz = axis.z;
-		
-		SimpleMatrix rotationMatrix = new SimpleMatrix(
-				new double[][] {
-					{cosTheta + ux * ux * oneMinusCosTheta,			ux * uy * oneMinusCosTheta - uz * sinTheta,		ux * uz * oneMinusCosTheta + uy * sinTheta},
-					{uy * ux * oneMinusCosTheta + uz * sinTheta,	cosTheta + uy * uy * oneMinusCosTheta,			uy * uz * oneMinusCosTheta - ux * sinTheta},
-					{uz * ux * oneMinusCosTheta - uy * sinTheta,	uz * uy * oneMinusCosTheta + ux * sinTheta,		cosTheta + uz * uz * oneMinusCosTheta}
-				});
+		SimpleMatrix rotationMatrix = HelperFunctions.getRotationMatrixAroundAxis3By3(axis, degrees);
 		
 		SimpleMatrix res = rotationMatrix.mult(asMatrix());
 		return new Point3D(res.get(0), res.get(1), res.get(2));
@@ -242,6 +225,10 @@ public class Point3D {
 	
 	public static Point3D fromMatrix(SimpleMatrix m) {
 		return new Point3D(m.get(0), m.get(1), m.get(2));
+	}
+	
+	public static Point3D fromMatrixDivideByW(SimpleMatrix m) {
+		return new Point3D(m.get(0) / m.get(3), m.get(1) / m.get(3), m.get(2) / m.get(3));
 	}
 	
 	/**

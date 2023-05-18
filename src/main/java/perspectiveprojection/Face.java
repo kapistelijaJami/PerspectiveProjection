@@ -7,7 +7,7 @@ import java.util.Arrays;
 import java.util.List;
 import org.ejml.simple.SimpleMatrix;
 
-public class Face implements Renderable {
+public class Face implements Renderable, HasListOfPoints {
 	public List<SimpleMatrix> points = new ArrayList<>(); //right hand rule, counterclockwise winding direction
 	public Color color;
 	public double lightMult = 1;
@@ -127,5 +127,10 @@ public class Face implements Renderable {
 	@Override
 	public double getDepth() {
 		return getAverageZ();
+	}
+
+	@Override
+	public List<SimpleMatrix> getListOfPoints() {
+		return points;
 	}
 }

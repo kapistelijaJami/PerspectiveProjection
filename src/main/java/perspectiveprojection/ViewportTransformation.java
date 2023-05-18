@@ -36,4 +36,11 @@ public class ViewportTransformation {
 		}
 		return f;
 	}
+	
+	public static Point3D fromScreenSpaceToClipSpace(Point2D point, int width, int height) {
+		double x = (point.x * 2 - width) / width;
+		double y = (point.y * 2 - height) / -height;
+		
+		return new Point3D(x, y, 0);
+	}
 }

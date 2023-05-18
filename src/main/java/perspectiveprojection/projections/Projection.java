@@ -24,14 +24,22 @@ public abstract class Projection {
 		this.cam = cam;
 	}
 	
+	public Camera getCamera() {
+		return cam;
+	}
+	
 	public Point3D project(SimpleMatrix point) {
 		return project(Point3D.fromMatrix(point));
 	}
 	
 	public Point3D project(Point3D point) {
-		SimpleMatrix clipSpace = projectToClipSpace(point);
+		SimpleMatrix clipSpacePoint = projectToClipSpace(point);
 		
-		return ViewportTransformation.fromClipSpaceToScreenSpace(clipSpace, Game.WIDTH, Game.HEIGHT);
+		if (!pointInside(clipSpacePoint)) {
+			return null;
+		}
+		
+		return ViewportTransformation.fromClipSpaceToScreenSpace(clipSpacePoint, Game.WIDTH, Game.HEIGHT);
 	}
 	
 	public Point3D[] projectPoints(Point3D... points) {
@@ -84,6 +92,10 @@ public abstract class Projection {
 	
 	public LineSegment projectLineSegment(Point3D a, Point3D b) {
 		return projectLineSegment(a.asHomogeneousVector(), b.asHomogeneousVector());
+	}
+	
+	public LineSegment projectLineSegment(Point3D end) {
+		return projectLineSegment(new Point3D(0, 0, 0), end);
 	}
 	
 	/**
@@ -190,7 +202,6 @@ public abstract class Projection {
 	}
 	
 	
-	
 	/**
 	 * Transforms the faces to screen space and adjusts their color based on the light sources.
 	 * @param faces
@@ -220,15 +231,27 @@ public abstract class Projection {
 			double dot = HelperFunctions.clamp(sum / count, ambientLight, 1);
 			face.lightMult = dot;
 			
-			//Transform face to screen space:
+			//Transform face to view space:
 			face = face.applyMatrix(cam.getViewMatrix());
 			//Backface culling:
 			if (face.getFaceNormal().dot(face.getAverageLocation()) >= 0) { //If the normal points to the same direction as camera, we see the back of the face.
 				continue;
 			}
 			
+			//To clip space:
 			face = face.applyMatrix(projectionMatrix);
-			//TODO: do frustum clipping/culling here
+			//Frustum culling (all points outside) (TODO: plane can still be visible even if all points are out):
+			boolean allOutside = true;
+			for (SimpleMatrix p : face.points) {
+				if (pointInside(p)) {
+					allOutside = false;
+				}
+			}
+			if (allOutside) {
+				continue;
+			}
+			
+			//TODO: do frustum clipping here (should remove the above after this is done)
 			
 			face = ViewportTransformation.fromClipSpaceToScreenSpace(face, Game.WIDTH, Game.HEIGHT);
 			transformed.add(face);
@@ -272,5 +295,27 @@ public abstract class Projection {
 		
 		//Viewing frustum in clip space:
 		frustum = new Frustum(topNormal, bottomNormal, leftNormal, rightNormal, nearNormal, farNormal);
+	}
+	
+	public SimpleMatrix fromClipSpaceToWorldSpace(Point3D p) {
+		SimpleMatrix invertProjection = projectionMatrix.invert();
+		SimpleMatrix invertViewMatrix = cam.getViewMatrix().invert();
+		
+		SimpleMatrix transformed = invertProjection.mult(p.asHomogeneousVector());
+		transformed = invertViewMatrix.mult(transformed);
+		
+		return transformed;
+	}
+	
+	public Double getProjectedSize(Point3D location, double size) {
+		Point3D p = project(location);
+		if (p == null) {
+			return null;
+		}
+		Point3D sizeVec = project(location.add(cam.getLeft().mult(size)));
+		if (sizeVec == null) {
+			return null;
+		}
+		return sizeVec.subtract(p).magnitude();
 	}
 }

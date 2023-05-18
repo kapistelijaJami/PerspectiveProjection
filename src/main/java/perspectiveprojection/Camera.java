@@ -13,7 +13,7 @@ public class Camera {
 										//in this matrix is applied first and then the rotation. The translate information will be combined in the
 										//last column with the rotation information, and wont match the coordinates anymore.
 										//We could either extract the coordinates from the matrix by inverse rotation, or keep track of
-										//them separately.
+										//them separately, which is done with the location variable.
 	
 	public Camera() {
 		this(new Point3D());
@@ -45,8 +45,8 @@ public class Camera {
 		return location;
 	}
 	
-	//AS ROW VECTORS (this should be correct, since as column/basis vectors they transform unit vectors to these bases,
-	//which means that points will move to the wrong direction. It has to be the inverse, and transpose is inverse of rotation matrix (I think))
+	//AS ROW VECTORS (since as column/basis vectors they transform unit vectors to these bases,
+	//which means that points will move to the wrong direction. It has to be the inverse, and transpose is inverse of rotation matrix)
 	//Forward and left will be negated for the matrix so that the view will end up pointing to the negative Z.
 	public Point3D getLeft() {
 		return new Point3D(viewMatrix.get(0, 0), viewMatrix.get(0, 1), viewMatrix.get(0, 2)).negate();
@@ -80,6 +80,12 @@ public class Camera {
 		updateMatrix();
 	}
 	
+	/**
+	 * Only calculates the last column of the matrix.
+	 * Other elements can be set manually.
+	 * This needs to be called even after rotations, because
+	 * the last column will be affected by the rotation information.
+	 */
 	private void updateMatrix() {
 		//The top left 3x3 submatrix won't change when location changes, but for the last column,
 		//we need to also apply the rotation, because it happens after the translation.
@@ -116,6 +122,14 @@ public class Camera {
 	}
 	
 	/**
+	 * Moves the camera up in the local space.
+	 * @param amount 
+	 */
+	public void moveUpLocal(double amount) {
+		setLoc(getLoc().add(getUp().mult(amount)));
+	}
+	
+	/**
 	 * Moves the camera right relative to the camera orientation.
 	 * Positive is right, negative is left.
 	 * @param amount 
@@ -133,11 +147,6 @@ public class Camera {
 		Point3D forward = getForward();
 		Point3D up = getUp();
 		setDir(forward.rotateAroundAxis(up, -amount)); //amount negated so that positive is to the right
-	}
-	
-	public void turnRelativeToWorld(double amount) { //not sure if these are different atm after I changed the setDir use UP vector.
-		Point3D forward = getForward();
-		setDir(forward.rotatedY(-amount)); //This seems to move slower though
 	}
 	
 	/**
@@ -158,6 +167,73 @@ public class Camera {
 		
 		setDir(forward.rotateAroundAxis(left, -amount)); //amount negated so that positive is to up
 	}
+	
+	public void orbitAroundPoint(Point3D point, double amountYaw, double amountPitch) {
+		Point3D forward = getForward();
+		Point3D left = getLeft(); //This has to be variable, because invert is before it's used
+		
+		Point3D UP = Point3D.getUP();
+		if (amountPitch < 0) { //pitching down, so we want DOWN vector instead
+			UP.negate();
+		}
+		double maxAngle = Math.max(0, Point3D.angleBetweenUnitVectors(forward, UP) - 1); //Stays 1 degree off from vertical
+		amountPitch = HelperFunctions.clamp(amountPitch, -maxAngle, maxAngle);
+		
+		
+		viewMatrix = viewMatrix.invert();
+		
+		SimpleMatrix rotationMatrix = HelperFunctions.getRotationMatrixAroundY4By4(-amountYaw);
+		rotationMatrix = rotationMatrix.mult(HelperFunctions.getRotationMatrixAroundAxis4By4(left, -amountPitch));
+		SimpleMatrix translationByPoint = HelperFunctions.getTranslationMatrix(point.negated());
+		SimpleMatrix translateBack = HelperFunctions.getTranslationMatrix(point);
+		
+		viewMatrix = translationByPoint.mult(viewMatrix);
+		viewMatrix = rotationMatrix.mult(viewMatrix);
+		viewMatrix = translateBack.mult(viewMatrix);
+		
+		location = Point3D.fromMatrix(viewMatrix.extractVector(false, 3));
+		viewMatrix = viewMatrix.invert();
+	}
+	
+	/*public void orbitAroundPointHorizontal(Point3D point, double amount) {
+		viewMatrix = viewMatrix.invert();
+		
+		SimpleMatrix rotationMatrix = HelperFunctions.getRotationMatrixAroundY4By4(-amount);
+		SimpleMatrix translationByPoint = HelperFunctions.getTranslationMatrix(point.negated());
+		SimpleMatrix translateBack = HelperFunctions.getTranslationMatrix(point);
+		
+		viewMatrix = translationByPoint.mult(viewMatrix);
+		viewMatrix = rotationMatrix.mult(viewMatrix);
+		viewMatrix = translateBack.mult(viewMatrix);
+		
+		location = Point3D.fromMatrix(viewMatrix.extractVector(false, 3));
+		viewMatrix = viewMatrix.invert();
+	}
+	
+	public void orbitAroundPointVertical(Point3D point, double amount) {
+		Point3D forward = getForward();
+		Point3D left = getLeft();
+		
+		Point3D UP = Point3D.getUP();
+		if (amount < 0) { //pitching down, so we want DOWN vector instead
+			UP.negate();
+		}
+		double maxAngle = Math.max(0, Point3D.angleBetweenUnitVectors(forward, UP) - 1); //Stays 1 degree off from vertical
+		amount = HelperFunctions.clamp(amount, -maxAngle, maxAngle);
+		
+		viewMatrix = viewMatrix.invert();
+		
+		SimpleMatrix rotationMatrix = HelperFunctions.getRotationMatrixAroundAxis4By4(left, -amount); //Positive amount is look up, with right hand rule amount should be negative
+		SimpleMatrix translationByPoint = HelperFunctions.getTranslationMatrix(point.negated());
+		SimpleMatrix translateBack = HelperFunctions.getTranslationMatrix(point);
+		
+		viewMatrix = translationByPoint.mult(viewMatrix);
+		viewMatrix = rotationMatrix.mult(viewMatrix);
+		viewMatrix = translateBack.mult(viewMatrix);
+		
+		location = Point3D.fromMatrix(viewMatrix.extractVector(false, 3));
+		viewMatrix = viewMatrix.invert();
+	}*/
 	
 	/**
 	 * Sets the direction based off the input vector.
