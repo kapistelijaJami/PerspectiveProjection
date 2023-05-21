@@ -3,6 +3,7 @@ package perspectiveprojection;
 import java.awt.Canvas;
 import perspectiveprojection.projections.Projection;
 import java.awt.Color;
+import java.awt.Cursor;
 import java.awt.Graphics2D;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -12,7 +13,7 @@ import perspectiveprojection.projections.PerspectiveProjection;
 import uilibrary.GameLoop;
 import uilibrary.Window;
 
-public class Game extends GameLoop {
+public class Game extends GameLoop { //FIXME: left side somehow clips lights too early.
 	private final Window window;
 	
 	//perspective good location when translate first, then rotate: loc (586.0, 691.0, 1202.0) yaw -26.0 pitch -153.0
@@ -56,6 +57,7 @@ public class Game extends GameLoop {
 	public Game(int fps) {
 		super(fps);
 		window = new Window(WIDTH, HEIGHT, "Perspective projection");
+		window.setCanvasBackground(Color.DARK_GRAY.darker().darker());
 	}
 	
 	@Override
@@ -115,11 +117,11 @@ public class Game extends GameLoop {
 		
 		if (shift || space) {
 			//cam.moveUp(speed);
-			cam.moveUpLocal(speed);
+			cam.moveUp(speed);
 		}
 		if (ctrl) {
 			//cam.moveUp(-speed);
-			cam.moveUpLocal(-speed);
+			cam.moveUp(-speed);
 		}
 		
 		if (cameraRotated) {
@@ -149,12 +151,17 @@ public class Game extends GameLoop {
 		if (selected != null) {
 			if (selected instanceof HasBoundingBox) {
 				p = ((HasBoundingBox) selected).getBoundingBox().getMiddle();
+				cam.orbitPointDistance = p.distanceFrom(cam.getLoc());
 			}
 		}
 		if (p == null) {
-			p = cam.getLoc().add(cam.getForward().mult(1000));
+			p = cam.getLoc().add(cam.getForward().mult(cam.orbitPointDistance));
 		}
 		return p;
+	}
+	
+	public Canvas getCanvas() {
+		return window.getCanvas();
 	}
 	
 	@Override
@@ -183,12 +190,7 @@ public class Game extends GameLoop {
 		}
 		
 		for (Ray ray : rays) {
-			LineSegment r = ray.ray;
-			r = projection.projectLineSegment(r);
-			if (r == null) {
-				continue;
-			}
-			r.render(g, Color.YELLOW, 10, 10);
+			ray.render(g, projection);
 		}
 		
 		/*cube.renderWireframe(g, projection);
@@ -196,6 +198,13 @@ public class Game extends GameLoop {
 		
 		if (selected != null) {
 			selected.renderSelected(g, projection);
+			Point3D mid = selected.getBoundingBox().getMiddle();
+			LineSegment x = projection.projectLineSegment(mid, mid.add(new Point3D(50, 0, 0)));
+			x.render(g, Color.RED, 3, 0, 5);
+			LineSegment y = projection.projectLineSegment(mid, mid.add(new Point3D(0, 50, 0)));
+			y.render(g, Color.GREEN, 3, 0, 5);
+			LineSegment z = projection.projectLineSegment(mid, mid.add(new Point3D(0, 0, 50)));
+			z.render(g, Color.BLUE, 3, 0, 5);
 		}
 		
 		window.display(g);
@@ -236,30 +245,30 @@ public class Game extends GameLoop {
 	public Camera getCamera()  {
 		return cam;
 	}
-
+	
 	public void lookAt(Point3D point3D) {
 		cam.lookAt(point3D);
 	}
-
+	
 	public void newYawAndPitch(double yaw, double pitch) {
 		newYaw = yaw;
 		newPitch = HelperFunctions.clamp(pitch, -89, 89);
 		cameraRotated = true;
 	}
-
+	
 	public void orbit(double yaw, double pitch) {
 		newYaw = yaw;
 		newPitch = HelperFunctions.clamp(pitch, -89, 89);
 		cameraOrbit = true;
 	}
-
+	
 	public double getCurrentYaw() {
 		if (newYaw == null) {
 			return cam.getYaw();
 		}
 		return newYaw;
 	}
-
+	
 	public double getCurrentPitch() {
 		if (newPitch == null) {
 			return cam.getPitch();
@@ -302,7 +311,7 @@ public class Game extends GameLoop {
 		
 		return objects;
 	}
-
+	
 	public void focusSelected() {
 		if (selected == null) {
 			cam.lookAt(new Point3D());

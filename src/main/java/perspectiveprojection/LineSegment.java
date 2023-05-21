@@ -5,7 +5,6 @@ import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.Paint;
 import java.awt.Point;
-import perspectiveprojection.projections.Projection;
 
 public class LineSegment {
 	private Point3D start;

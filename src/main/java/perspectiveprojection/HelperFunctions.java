@@ -1,5 +1,10 @@
 package perspectiveprojection;
 
+import java.awt.Component;
+import java.awt.Cursor;
+import java.awt.Point;
+import java.awt.Toolkit;
+import java.awt.image.BufferedImage;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.util.Locale;
@@ -371,5 +376,11 @@ public class HelperFunctions {
 					{            0,              0,               0,             1}
 				});
 		return m;
+	}
+	
+	public static void setCursorBlank(Component c) {
+		BufferedImage cursorImg = new BufferedImage(16, 16, BufferedImage.TYPE_INT_ARGB);
+		Cursor blankCursor = Toolkit.getDefaultToolkit().createCustomCursor(cursorImg, new Point(0, 0), "blank cursor");
+		c.setCursor(blankCursor);
 	}
 }

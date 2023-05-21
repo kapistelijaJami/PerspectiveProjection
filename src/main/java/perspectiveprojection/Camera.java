@@ -15,6 +15,8 @@ public class Camera {
 										//We could either extract the coordinates from the matrix by inverse rotation, or keep track of
 										//them separately, which is done with the location variable.
 	
+	public double orbitPointDistance = 700;
+	
 	public Camera() {
 		this(new Point3D());
 	}
@@ -117,15 +119,15 @@ public class Camera {
 	 * Moves the camera up in the world space.
 	 * @param amount 
 	 */
-	public void moveUp(double amount) {
+	public void moveUpWorld(double amount) {
 		setLoc(getLoc().add(Point3D.getUP().mult(amount)));
 	}
 	
 	/**
-	 * Moves the camera up in the local space.
+	 * Moves the camera up relative to the camera orientation.
 	 * @param amount 
 	 */
-	public void moveUpLocal(double amount) {
+	public void moveUp(double amount) {
 		setLoc(getLoc().add(getUp().mult(amount)));
 	}
 	

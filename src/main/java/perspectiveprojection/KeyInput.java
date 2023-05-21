@@ -1,23 +1,35 @@
 package perspectiveprojection;
 
 import java.awt.AWTException;
+import java.awt.Cursor;
+import java.awt.MouseInfo;
 import java.awt.Point;
+import java.awt.Robot;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseWheelEvent;
 import java.awt.event.MouseWheelListener;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.swing.SwingUtilities;
 import javax.swing.event.MouseInputListener;
 
 public class KeyInput implements MouseInputListener, MouseWheelListener, KeyListener {
 	private Game game;
-	private Point clickLoc; //where was the click location of the mouse relative to the window
+	private Point clickLoc; //where was the click location of the mouse relative to the screen
 	
 	private boolean dragging = false;
+	private Robot robot;
 	
 	public KeyInput(Game game) {
 		this.game = game;
+		
+		try {
+			robot = new Robot();
+		} catch (AWTException ex) {
+			ex.printStackTrace();
+		}
 	}
 	
 	@Override
@@ -27,7 +39,8 @@ public class KeyInput implements MouseInputListener, MouseWheelListener, KeyList
 	
 	@Override
 	public void mousePressed(MouseEvent e) {
-		clickLoc = e.getPoint();
+		//clickLoc = e.getPoint();
+		clickLoc = e.getLocationOnScreen();
 	}
 	
 	@Override
@@ -37,6 +50,7 @@ public class KeyInput implements MouseInputListener, MouseWheelListener, KeyList
 			game.click(e.getX(), e.getY(), renderRay);
 		}
 		dragging = false;
+		game.getCanvas().setCursor(Cursor.getDefaultCursor());
 	}
 	
 	@Override
@@ -51,30 +65,49 @@ public class KeyInput implements MouseInputListener, MouseWheelListener, KeyList
 	
 	@Override
 	public void mouseDragged(MouseEvent e) {
-		Point p = e.getPoint();
+		//Point p = e.getPoint();
+		Point p = e.getLocationOnScreen();
+		//Point p = MouseInfo.getPointerInfo().getLocation(); //if we were to reset mouse location somewhere other than where it was clicked, this is needed, since e could have old information.
+		
 		Point diff = new Point(p.x - clickLoc.x, p.y - clickLoc.y);
+		
 		if (!dragging && diff.distance(0, 0) < 5) { //How long does the distance have to be to be considered a drag instead of a click
 			return;
 		}
+		
+		if (!dragging && !SwingUtilities.isMiddleMouseButton(e)) {
+			HelperFunctions.setCursorBlank(game.getCanvas());
+		}
+		
 		dragging = true;
 		
-		if (SwingUtilities.isRightMouseButton(e) && !e.isAltDown()) {
+		if (SwingUtilities.isRightMouseButton(e)) {
+			Camera cam = game.getCamera();
+			cam.moveForward(-diff.y);
+		} else if (SwingUtilities.isLeftMouseButton(e) && e.isAltDown()) {
 			Point2D prevRot = new Point2D(game.getCurrentYaw(), game.getCurrentPitch());
-			double speed = 0.75 / 4.0;
+			double speed = 0.5 / 4.0;
 			double yaw = prevRot.x + diff.x * speed;
 			double pitch = prevRot.y - diff.y * speed;
 			
 			game.newYawAndPitch(yaw, pitch);
-			
-		} else if (SwingUtilities.isLeftMouseButton(e)) {
+		} else if (SwingUtilities.isLeftMouseButton(e) && !e.isAltDown()) {
 			Point2D prevRot = new Point2D(game.getCurrentYaw(), game.getCurrentPitch());
 			double speed = 0.5;
 			double yaw = prevRot.x + diff.x * speed;
 			double pitch = prevRot.y - diff.y * speed;
 			
 			game.orbit(yaw, pitch);
+		} else if (SwingUtilities.isMiddleMouseButton(e)) {
+			Camera cam = game.getCamera();
+			cam.moveRight(-diff.x);
+			cam.moveUp(diff.y);
+			
+			mousePressed(e); //resets the click locations for this event, ready to receive the next drag event (not needed now that the mouse is still and clickLoc is not being updated)
+			return; //so that it doesn't go to robot.mouseMove()
 		}
-		mousePressed(e); //resets the click locations for this event, ready to receive the next drag event
+		
+		robot.mouseMove(clickLoc.x, clickLoc.y);
 	}
 	
 	private boolean checkMouseButtonMask(MouseEvent e, int onMask) {

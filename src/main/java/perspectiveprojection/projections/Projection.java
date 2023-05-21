@@ -318,4 +318,12 @@ public abstract class Projection {
 		}
 		return sizeVec.subtract(p).magnitude();
 	}
+	
+	public double getProjectedSize(Point3D location, double size, double defaultSize) {
+		Double d = getProjectedSize(location, size);
+		if (d == null) {
+			return defaultSize;
+		}
+		return d;
+	}
 }
