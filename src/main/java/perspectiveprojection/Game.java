@@ -1,17 +1,36 @@
 package perspectiveprojection;
 
+import perspectiveprojection.objects.Light;
+import perspectiveprojection.util.HelperFunctions;
+import perspectiveprojection.primitives.BoundingBox;
+import perspectiveprojection.primitives.LineSegment;
+import perspectiveprojection.enums.MoveDirection;
+import perspectiveprojection.linear_algebra.Point2D;
+import perspectiveprojection.transformations.ViewportTransformation;
+import perspectiveprojection.linear_algebra.Point3D;
+import perspectiveprojection.objects.Ray;
+import perspectiveprojection.input.ButtonsDown;
+import perspectiveprojection.input.KeyInput;
+import perspectiveprojection.objects.Cube;
+import perspectiveprojection.camera.Camera;
+import perspectiveprojection.objects.GameObject;
+import perspectiveprojection.interfaces.HasBoundingBox;
+import perspectiveprojection.interfaces.Renderable;
+import perspectiveprojection.objects.MoveArrows;
 import java.awt.Canvas;
-import perspectiveprojection.projections.Projection;
+import perspectiveprojection.transformations.projections.Projection;
 import java.awt.Color;
 import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.Point;
+import java.awt.event.KeyEvent;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import perspectiveprojection.projections.OrthographicProjection;
-import perspectiveprojection.projections.PerspectiveProjection;
+import java.util.Optional;
+import perspectiveprojection.transformations.projections.OrthographicProjection;
+import perspectiveprojection.transformations.projections.PerspectiveProjection;
 import uilibrary.GameLoop;
 import uilibrary.Window;
 
@@ -30,18 +49,7 @@ public class Game extends GameLoop { //FIXME: left side somehow clips lights too
 	public static double ambientLight = 0.05; //from 0 to 1
 	public static double DEFAULT_LIGHT_INTENSITY = 10000;
 	
-	public boolean up = false;
-	public boolean down = false;
-	public boolean left = false;
-	public boolean right = false;
-	
-	public boolean w = false;
-	public boolean a = false;
-	public boolean s = false;
-	public boolean d = false;
-	public boolean shift = false;
-	public boolean space = false;
-	public boolean ctrl = false;
+	private KeyInput input;
 	
 	private boolean cameraRotated = false;
 	private boolean cameraOrbit = false;
@@ -66,7 +74,7 @@ public class Game extends GameLoop { //FIXME: left side somehow clips lights too
 	
 	@Override
 	protected void init() {
-		KeyInput input = new KeyInput(this);
+		input = new KeyInput(this);
 		
 		Canvas canvas = window.getCanvas();
 		canvas.addKeyListener(input);
@@ -85,73 +93,6 @@ public class Game extends GameLoop { //FIXME: left side somehow clips lights too
 	@Override
 	protected void lazyUpdate(int fps) {
 		window.setTitle("Perspective projection (" + fps + " fps)");
-	}
-	
-	@Override
-	protected void update() {
-		double speed = 0.5;
-		Point3D orbitPoint = getOrbitPoint();
-		if (up) {
-			//cam.pitch(speed);
-			//cam.orbitAroundPointVertical(orbitPoint, speed);
-		}
-		if (down) {
-			//cam.pitch(-speed);
-			//cam.orbitAroundPointVertical(orbitPoint, -speed);
-		}
-		if (left) {
-			//cam.turn(-speed);
-			//cam.orbitAroundPointHorizontal(orbitPoint, -speed);
-		}
-		if (right) {
-			//cam.turn(speed);
-			//cam.orbitAroundPointHorizontal(orbitPoint, speed);
-		}
-		
-		speed *= 5;
-		
-		if (w) {
-			cam.moveForward(speed);
-		}
-		if (s) {
-			cam.moveForward(-speed);
-		}
-		if (a) {
-			cam.moveRight(-speed);
-		}
-		if (d) {
-			cam.moveRight(speed);
-		}
-		
-		if (shift || space) {
-			//cam.moveUp(speed);
-			cam.moveUp(speed);
-		}
-		if (ctrl) {
-			//cam.moveUp(-speed);
-			cam.moveUp(-speed);
-		}
-		
-		if (cameraRotated) {
-			cam.setYawAndPitch(newYaw, newPitch);
-			cameraRotated = false;
-		}
-		if (cameraOrbit) {
-			/*cam.orbitAroundPointHorizontal(orbitPoint, newYaw - cam.getYaw()); //Horizontal should be before vertical
-			cam.orbitAroundPointVertical(orbitPoint, newPitch - cam.getPitch());*/
-			
-			cam.orbitAroundPoint(orbitPoint, newYaw - cam.getYaw(), newPitch - cam.getPitch());
-			
-			cameraOrbit = false;
-		}
-		
-		for (int i = 0; i < rays.size(); i++) {
-			Ray ray = rays.get(i);
-			if (ray.creationTime + 5000 < System.currentTimeMillis()) {
-				rays.remove(i);
-				i--;
-			}
-		}
 	}
 	
 	private Point3D getOrbitPoint() {
@@ -176,6 +117,72 @@ public class Game extends GameLoop { //FIXME: left side somehow clips lights too
 	}
 	
 	@Override
+	protected void update() {
+		double speed = 0.5;
+		Point3D orbitPoint = getOrbitPoint();
+		if (input.isButtonDown(KeyEvent.VK_UP)) {
+			cam.pitch(speed);
+			//cam.orbitAroundPointVertical(orbitPoint, speed);
+		}
+		if (input.isButtonDown(KeyEvent.VK_DOWN)) {
+			cam.pitch(-speed);
+			//cam.orbitAroundPointVertical(orbitPoint, -speed);
+		}
+		if (input.isButtonDown(KeyEvent.VK_LEFT)) {
+			cam.turn(-speed);
+			//cam.orbitAroundPointHorizontal(orbitPoint, -speed);
+		}
+		if (input.isButtonDown(KeyEvent.VK_RIGHT)) {
+			cam.turn(speed);
+			//cam.orbitAroundPointHorizontal(orbitPoint, speed);
+		}
+		
+		speed *= 5;
+		
+		if (input.isButtonDown(KeyEvent.VK_W)) {
+			cam.moveForward(speed);
+		}
+		if (input.isButtonDown(KeyEvent.VK_S)) {
+			cam.moveForward(-speed);
+		}
+		if (input.isButtonDown(KeyEvent.VK_A)) {
+			cam.moveRight(-speed);
+		}
+		if (input.isButtonDown(KeyEvent.VK_D)) {
+			cam.moveRight(speed);
+		}
+		
+		if (input.isButtonDown(KeyEvent.VK_SHIFT) || input.isButtonDown(KeyEvent.VK_SPACE)) {
+			cam.moveUp(speed);
+		}
+		if (input.isButtonDown(KeyEvent.VK_CONTROL)) {
+			cam.moveUp(-speed);
+		}
+		
+		if (cameraRotated) {
+			cam.setYawAndPitch(newYaw, newPitch);
+			cameraRotated = false;
+		}
+		if (cameraOrbit) {
+			cam.orbitAroundPoint(orbitPoint, newYaw - cam.getYaw(), newPitch - cam.getPitch());
+			cameraOrbit = false;
+		}
+		
+		for (int i = 0; i < rays.size(); i++) {
+			Ray ray = rays.get(i);
+			if (ray.creationTime + 5000 < System.currentTimeMillis()) {
+				rays.remove(i);
+				i--;
+			}
+		}
+		
+		//Update moveArrows
+		if (selected != null) {
+			selected.moveArrows.setLocation(selected.getBoundingBox().getMiddle());
+		}
+	}
+	
+	@Override
 	protected void render() {
 		Graphics2D g = window.getGraphics2D();
 		
@@ -187,11 +194,11 @@ public class Game extends GameLoop { //FIXME: left side somehow clips lights too
 		for (Light light : lights) {
 			Point3D p = projection.project(light.location);
 			
-			Double size = projection.getProjectedSize(light.location, light.size);
-			if (size == null) {
+			Optional<Double> size = projection.getProjectedSize(light.location, light.size);
+			if (size.isEmpty()) {
 				continue;
 			}
-			transformed.add(new Light(p, size));
+			transformed.add(new Light(p, size.get()));
 		}
 		
 		transformed.sort(null);
@@ -210,7 +217,7 @@ public class Game extends GameLoop { //FIXME: left side somehow clips lights too
 		if (selected != null) {
 			Point3D mid = selected.getBoundingBox().getMiddle();
 			selected.renderSelected(g, projection);
-			selected.moveArrows.render(g, mid, projection);
+			selected.moveArrows.render(g, projection);
 		}
 		
 		if (hovering != null && hovering != selected) {
@@ -297,7 +304,8 @@ public class Game extends GameLoop { //FIXME: left side somehow clips lights too
 		if (!objects.isEmpty()) {
 			selected = objects.get(0);
 			if (selected.moveArrows == null) {
-				selected.moveArrows = new MoveArrows();
+				Point3D mid = selected.getBoundingBox().getMiddle();
+				selected.moveArrows = new MoveArrows(mid);
 			}
 		} else {
 			selected = null;
@@ -525,14 +533,14 @@ public class Game extends GameLoop { //FIXME: left side somehow clips lights too
 			if (direction != null) {
 				//System.out.println("yks");
 				hovering = selected.moveArrows;
-				hovering.hover();
+				//hovering.hover();
 				
 				selected.moveArrows.setHoverDirection(direction);
 				return;
 			} else {
 				//System.out.println("kaks");
 				if (hovering != null) {
-					hovering.unhover();
+					//hovering.unhover();
 					hovering = null;
 				}
 			}
@@ -541,10 +549,10 @@ public class Game extends GameLoop { //FIXME: left side somehow clips lights too
 		List<GameObject> objects = intersects(ray);
 		if (!objects.isEmpty()) {
 			hovering = objects.get(0);
-			hovering.hover();
+			//hovering.hover();
 		} else {
 			if (hovering != null) {
-				hovering.unhover();
+				//hovering.unhover();
 				hovering = null;
 			}
 		}

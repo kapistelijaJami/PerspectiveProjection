@@ -1,9 +1,11 @@
 package perspectiveprojection;
 
+import perspectiveprojection.util.HelperFunctions;
+import perspectiveprojection.linear_algebra.Point3D;
 import org.ejml.simple.SimpleMatrix;
-import perspectiveprojection.projections.OrthographicProjection;
-import perspectiveprojection.projections.PerspectiveProjection;
-import perspectiveprojection.projections.Projection;
+import perspectiveprojection.transformations.projections.OrthographicProjection;
+import perspectiveprojection.transformations.projections.PerspectiveProjection;
+import perspectiveprojection.transformations.projections.Projection;
 
 public class Main {
 	public static void main(String[] args) {
