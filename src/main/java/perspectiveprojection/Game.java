@@ -5,6 +5,7 @@ import perspectiveprojection.projections.Projection;
 import java.awt.Color;
 import java.awt.Cursor;
 import java.awt.Graphics2D;
+import java.awt.Point;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -18,7 +19,7 @@ public class Game extends GameLoop { //FIXME: left side somehow clips lights too
 	
 	//perspective good location when translate first, then rotate: loc (586.0, 691.0, 1202.0) yaw -26.0 pitch -153.0
 	//private Camera cam = new Camera(new Point3D(500, 700, 800)); //(new Point3D(-400, 300, 500), -25, 28) works with ortographic (origo might be behind camera). Should be able to work with others with these settings as well
-	private final Camera cam = new Camera(new Point3D(400, 500, 800)); //def: (400, 500, 800)
+	private final Camera cam = new Camera(new Point3D(400, 500, 800)); //def: (, 800)
 	private final Cube cube = new Cube(100, true);
 	private final Cube smallCube = new Cube(70, false);
 	private final Projection projection = new PerspectiveProjection(cam);
@@ -49,8 +50,10 @@ public class Game extends GameLoop { //FIXME: left side somehow clips lights too
 	public static int WIDTH = 1280;
 	public static int HEIGHT = 720;
 	public static int FOV = 60; //def: 60, vertical FOV
+	public static int DEFAULT_RAY_LENGTH = 10000;
 	
 	private GameObject selected;
+	private GameObject hovering;
 	
 	private final List<Ray> rays = new ArrayList<>();
 	
@@ -197,14 +200,9 @@ public class Game extends GameLoop { //FIXME: left side somehow clips lights too
 		smallCube.renderWireframe(g, projection);*/
 		
 		if (selected != null) {
-			selected.renderSelected(g, projection);
 			Point3D mid = selected.getBoundingBox().getMiddle();
-			LineSegment x = projection.projectLineSegment(mid, mid.add(new Point3D(50, 0, 0)));
-			x.render(g, Color.RED, 3, 0, 5);
-			LineSegment y = projection.projectLineSegment(mid, mid.add(new Point3D(0, 50, 0)));
-			y.render(g, Color.GREEN, 3, 0, 5);
-			LineSegment z = projection.projectLineSegment(mid, mid.add(new Point3D(0, 0, 50)));
-			z.render(g, Color.BLUE, 3, 0, 5);
+			selected.renderSelected(g, projection);
+			selected.moveArrows.render(g, mid, projection);
 		}
 		
 		window.display(g);
@@ -278,28 +276,55 @@ public class Game extends GameLoop { //FIXME: left side somehow clips lights too
 	
 	//Performs raycasting to select objects.
 	public void click(int x, int y, boolean renderRay) {
-		double rayLength = 10000;
+		Ray ray = createRay(x, y);
+		if (renderRay) {
+			rays.add(ray);
+		}
 		
+		List<GameObject> objects = intersects(ray);
+		if (!objects.isEmpty()) {
+			selected = objects.get(0);
+			if (selected.moveArrows == null) {
+				selected.moveArrows = new MoveArrows();
+			}
+		} else {
+			selected = null;
+		}
+	}
+	
+	private Ray createRay(int x, int y) {
+		return createRay(x, y, DEFAULT_RAY_LENGTH);
+	}
+	
+	private Ray createRay(int x, int y, double length) {
 		Point3D start = cam.getLoc();
 		Point3D rayAtNearPlane = ViewportTransformation.fromScreenSpaceToClipSpace(new Point2D(x, y), WIDTH, HEIGHT);
 		rayAtNearPlane = Point3D.fromMatrixDivideByW(projection.fromClipSpaceToWorldSpace(rayAtNearPlane));
 		Point3D dir = rayAtNearPlane.subtract(start).normalize();
-		if (renderRay) {
-			rays.add(new Ray(new LineSegment(start, start.add(dir.mult(rayLength)))));
-		}
+		
+		return new Ray(new LineSegment(start, start.add(dir.mult(length))));
+	}
+	
+	public List<GameObject> intersects(Point3D start, Point3D dir, double rayLength) {
+		return intersects(new Ray(start, dir, rayLength));
+	}
+	
+	public List<GameObject> intersects(Ray ray) {
+		List<GameObject> list = new ArrayList<>();
 		
 		List<HasBoundingBox> objects = getObjectsAsBoundingBoxes();
 		for (HasBoundingBox object : objects) {
 			BoundingBox bounds = object.getBoundingBox();
-			if (bounds.lineIntersection(start, dir, rayLength)) { //TODO: get t value and keep track of closest
+			if (bounds.lineIntersection(ray.getStart(), ray.getEnd())) { //TODO: get t value and keep track of closest and return them all in an ordered list
 				if (object instanceof GameObject) {
-					selected = (GameObject) object;
-					return;
+					GameObject obj = (GameObject) object;
+					list.add(obj);
+					return list;
 				}
 			}
 		}
 		
-		selected = null;
+		return list;
 	}
 	
 	private List<HasBoundingBox> getObjectsAsBoundingBoxes() {
@@ -314,8 +339,10 @@ public class Game extends GameLoop { //FIXME: left side somehow clips lights too
 	
 	public void focusSelected() {
 		if (selected == null) {
+			Point3D p = new Point3D();
 			cam.lookAt(new Point3D());
 			cam.setLoc(cam.getForward().negated().mult(700));
+			cam.orbitPointDistance = p.distanceFrom(cam.getLoc());
 		} else {
 			BoundingBox bounds = selected.getBoundingBox();
 			Point3D middle = bounds.getMiddle();
@@ -328,5 +355,187 @@ public class Game extends GameLoop { //FIXME: left side somehow clips lights too
 		}
 		newYaw = cam.getYaw();
 		newPitch = cam.getPitch();
+	}
+	
+	/**
+	 * Checks if clicked location contains move arrows.
+	 * Returns true if it did. Also sets the movingDirection to KeyInput.
+	 * @param x
+	 * @param y
+	 * @param input
+	 * @return 
+	 */
+	public boolean clickMoveSelected(int x, int y, KeyInput input) {
+		if (selected == null) {
+			return false;
+		}
+		
+		Ray ray = createRay(x, y);
+		
+		MoveDirection direction = intersectsMoveDirection(ray, selected);
+		
+		if (direction == null) {
+			return false;
+		}
+		
+		input.startToMoveObject(direction);
+		return true;
+	}
+	
+	private MoveDirection intersectsMoveDirection(Ray ray, GameObject object) {
+		Point3D mid = object.getBoundingBox().getMiddle();
+		
+		BoundingBox boxALL = object.moveArrows.getALLBoundingBox(mid);
+		if (boxALL.lineIntersection(ray.getStart(), ray.getDir(), ray.getLength())) {
+			return MoveDirection.ALL;
+		}
+		
+		BoundingBox boxX = object.moveArrows.getXBoundingBox(mid);
+		if (boxX.lineIntersection(ray.getStart(), ray.getDir(), ray.getLength())) {
+			return MoveDirection.X;
+		}
+		
+		BoundingBox boxY = object.moveArrows.getYBoundingBox(mid);
+		if (boxY.lineIntersection(ray.getStart(), ray.getDir(), ray.getLength())) {
+			return MoveDirection.Y;
+		}
+		
+		BoundingBox boxZ = object.moveArrows.getZBoundingBox(mid);
+		if (boxZ.lineIntersection(ray.getStart(), ray.getDir(), ray.getLength())) {
+			return MoveDirection.Z;
+		}
+		
+		
+		BoundingBox boxXZ = object.moveArrows.getXZFaceBoundingBox(mid);
+		if (boxXZ.lineIntersection(ray.getStart(), ray.getDir(), ray.getLength())) {
+			return MoveDirection.XZ;
+		}
+		
+		BoundingBox boxXY = object.moveArrows.getXYFaceBoundingBox(mid);
+		if (boxXY.lineIntersection(ray.getStart(), ray.getDir(), ray.getLength())) {
+			return MoveDirection.XY;
+		}
+		
+		BoundingBox boxYZ = object.moveArrows.getYZFaceBoundingBox(mid);
+		if (boxYZ.lineIntersection(ray.getStart(), ray.getDir(), ray.getLength())) {
+			return MoveDirection.YZ;
+		}
+		
+		return null;
+	}
+	
+	public Point3D projectToMoveDirection(int x, int y, MoveDirection movingDirection, Point3D oldPoint) { //TODO: still is not perfect, the box doesn't follow the mouse exactly. Even with plane movement, where it should follow perfectly.
+		if (selected == null) {
+			return new Point3D(x, y, 0);
+		}
+		
+		Point3D mid = selected.getBoundingBox().getMiddle();
+		if (oldPoint == null) {
+			oldPoint = mid;
+		}
+		
+		Ray ray = createRay(x, y);
+		
+		Point3D projected = new Point3D(x, y, 0);
+		
+		switch (movingDirection) {
+			case X:
+				//With one direction only, you can choose the plane. Let's take XY
+				projected = HelperFunctions.intersectionPointWithPlaneInfinite(mid, Point3D.getZ(), ray.getStart(), ray.getDir());
+				break;
+			case Y:
+				//Let's take XY
+				projected = HelperFunctions.intersectionPointWithPlaneInfinite(mid, Point3D.getZ(), ray.getStart(), ray.getDir());
+				break;
+			case Z:
+				//Let's take XZ
+				projected = HelperFunctions.intersectionPointWithPlaneInfinite(mid, Point3D.getY(), ray.getStart(), ray.getDir());
+				break;
+			case XZ:
+				projected = HelperFunctions.intersectionPointWithPlaneInfinite(mid, Point3D.getY(), ray.getStart(), ray.getDir());
+				break;
+			case XY:
+				projected = HelperFunctions.intersectionPointWithPlaneInfinite(mid, Point3D.getZ(), ray.getStart(), ray.getDir());
+				break;
+			case YZ:
+				projected = HelperFunctions.intersectionPointWithPlaneInfinite(mid, Point3D.getX(), ray.getStart(), ray.getDir());
+				break;
+			case ALL:
+				//Here we take from camera orientation
+				projected = HelperFunctions.intersectionPointWithPlaneInfinite(oldPoint, cam.getForward().negated(), ray.getStart(), ray.getDir());
+				break;
+		}
+		
+		return projected;
+	}
+
+	public void moveSelected(MoveDirection movingDirection, Point3D diff) {
+		if (selected == null) {
+			return;
+		}
+		
+		//TODO: Project to different plane, which is oriented towards camera better. Now if XY projection, and you look down, you cant move
+		switch (movingDirection) {
+			case X:
+				selected.moveRight(diff.x);
+				break;
+			case Y:
+				selected.moveUp(diff.y);
+				break;
+			case Z:
+				selected.moveForward(diff.z);
+				break;
+			case XZ:
+				selected.moveRight(diff.x);
+				selected.moveForward(diff.z);
+				break;
+			case XY:
+				selected.moveRight(diff.x);
+				selected.moveUp(diff.y);
+				break;
+			case YZ:
+				selected.moveUp(diff.y);
+				selected.moveForward(diff.z);
+				break;
+			case ALL:
+				selected.setLocation(selected.getLocation().add(diff));
+				break;
+		}
+	}
+	
+	public void hover(int x, int y) {
+		Ray ray = createRay(x, y);
+		
+		if (selected != null) {
+			MoveDirection direction = intersectsMoveDirection(ray, selected);
+			if (direction != null) {
+				//System.out.println("yks");
+				hovering = selected.moveArrows;
+				hovering.hover();
+				
+				selected.moveArrows.setHoverDirection(direction);
+				return;
+			} else {
+				//System.out.println("kaks");
+				if (hovering != null) {
+					hovering.unhover();
+					hovering = null;
+				}
+			}
+		}
+		
+		//System.out.println("kol");
+		
+		List<GameObject> objects = intersects(ray);
+		if (!objects.isEmpty()) {
+			//System.out.println("nel");
+			hovering = objects.get(0);
+		} else {
+			//System.out.println("viis");
+			if (hovering != null) {
+				hovering.unhover();
+				hovering = null;
+			}
+		}
 	}
 }

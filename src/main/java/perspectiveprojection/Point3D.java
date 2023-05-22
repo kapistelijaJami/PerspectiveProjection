@@ -16,8 +16,20 @@ public class Point3D {
 		this.z = z;
 	}
 	
+	public static Point3D getX() {
+		return new Point3D(1, 0, 0);
+	}
+	
 	public static Point3D getUP() {
 		return new Point3D(0, 1, 0);
+	}
+	
+	public static Point3D getY() {
+		return getUP();
+	}
+	
+	public static Point3D getZ() {
+		return new Point3D(0, 0, 1);
 	}
 	
 	public Point3D copy() {
@@ -294,5 +306,9 @@ public class Point3D {
 	
 	public Point getAs2DInt() {
 		return new Point((int) x, (int) y);
+	}
+
+	public Point3D abs() {
+		return new Point3D(Math.abs(x), Math.abs(y), Math.abs(z));
 	}
 }

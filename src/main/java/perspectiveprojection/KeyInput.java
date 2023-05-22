@@ -2,7 +2,6 @@ package perspectiveprojection;
 
 import java.awt.AWTException;
 import java.awt.Cursor;
-import java.awt.MouseInfo;
 import java.awt.Point;
 import java.awt.Robot;
 import java.awt.event.KeyEvent;
@@ -10,8 +9,6 @@ import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseWheelEvent;
 import java.awt.event.MouseWheelListener;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.swing.SwingUtilities;
 import javax.swing.event.MouseInputListener;
 
@@ -20,6 +17,9 @@ public class KeyInput implements MouseInputListener, MouseWheelListener, KeyList
 	private Point clickLoc; //where was the click location of the mouse relative to the screen
 	
 	private boolean dragging = false;
+	private boolean moving = false;
+	private MoveDirection movingDirection;
+	private Point3D currentMoveLocation;
 	private Robot robot;
 	
 	public KeyInput(Game game) {
@@ -41,6 +41,10 @@ public class KeyInput implements MouseInputListener, MouseWheelListener, KeyList
 	public void mousePressed(MouseEvent e) {
 		//clickLoc = e.getPoint();
 		clickLoc = e.getLocationOnScreen();
+		
+		if (game.clickMoveSelected(e.getX(), e.getY(), this)) {
+			currentMoveLocation = game.projectToMoveDirection(e.getX(), e.getY(), movingDirection, null);
+		}
 	}
 	
 	@Override
@@ -50,7 +54,10 @@ public class KeyInput implements MouseInputListener, MouseWheelListener, KeyList
 			game.click(e.getX(), e.getY(), renderRay);
 		}
 		dragging = false;
+		moving = false;
 		game.getCanvas().setCursor(Cursor.getDefaultCursor());
+		
+		mouseMoved(e);
 	}
 	
 	@Override
@@ -69,18 +76,33 @@ public class KeyInput implements MouseInputListener, MouseWheelListener, KeyList
 		Point p = e.getLocationOnScreen();
 		//Point p = MouseInfo.getPointerInfo().getLocation(); //if we were to reset mouse location somewhere other than where it was clicked, this is needed, since e could have old information.
 		
-		Point diff = new Point(p.x - clickLoc.x, p.y - clickLoc.y);
 		
-		if (!dragging && diff.distance(0, 0) < 5) { //How long does the distance have to be to be considered a drag instead of a click
-			return;
-		}
 		
-		if (!dragging && !SwingUtilities.isMiddleMouseButton(e)) {
-			HelperFunctions.setCursorBlank(game.getCanvas());
+		if (moving) {
+			if (SwingUtilities.isLeftMouseButton(e)) {
+				Point3D newMoveLocation = game.projectToMoveDirection(e.getX(), e.getY(), movingDirection, currentMoveLocation);
+				Point3D diff = new Point3D(newMoveLocation.x - currentMoveLocation.x, newMoveLocation.y - currentMoveLocation.y, newMoveLocation.z - currentMoveLocation.z);
+
+				handleMoveObject(e, diff);
+
+				currentMoveLocation = newMoveLocation;
+			}
+		} else {
+			Point2D diff = new Point2D(p.x - clickLoc.x, p.y - clickLoc.y);
+			
+			if (!dragging && diff.magnitude() < 5) { //How long does the distance have to be to be considered a drag instead of a click
+				return;
+			}
+			if (!dragging && !SwingUtilities.isMiddleMouseButton(e)) {
+				HelperFunctions.setCursorBlank(game.getCanvas());
+			}
+			handleMoveCamera(e, diff);
 		}
 		
 		dragging = true;
-		
+	}
+	
+	private void handleMoveCamera(MouseEvent e, Point2D diff) {
 		if (SwingUtilities.isRightMouseButton(e)) {
 			Camera cam = game.getCamera();
 			cam.moveForward(-diff.y);
@@ -110,6 +132,11 @@ public class KeyInput implements MouseInputListener, MouseWheelListener, KeyList
 		robot.mouseMove(clickLoc.x, clickLoc.y);
 	}
 	
+	private void handleMoveObject(MouseEvent e, Point3D diff) {
+		double speed = 1;
+		game.moveSelected(movingDirection, diff.mult(speed));
+	}
+	
 	private boolean checkMouseButtonMask(MouseEvent e, int onMask) {
 		return checkMouseButtonMask(e, onMask, 0);
 	}
@@ -131,13 +158,16 @@ public class KeyInput implements MouseInputListener, MouseWheelListener, KeyList
 	
 	@Override
 	public void mouseMoved(MouseEvent e) {
-		//game.mouseMoved(e);
+		if (!dragging) {
+			game.hover(e.getX(), e.getY());
+		}
 	}
 	
 	@Override
 	public void mouseWheelMoved(MouseWheelEvent e) {
 		Camera cam = game.getCamera();
-		cam.moveForward(50 * -e.getPreciseWheelRotation());
+		double speed = 100;
+		cam.moveForward(speed * -e.getPreciseWheelRotation());
 	}
 	
 	@Override
@@ -240,5 +270,10 @@ public class KeyInput implements MouseInputListener, MouseWheelListener, KeyList
 				game.ctrl = false;
 				break;
 		}
+	}
+
+	public void startToMoveObject(MoveDirection movingDirection) {
+		moving = true;
+		this.movingDirection = movingDirection;
 	}
 }

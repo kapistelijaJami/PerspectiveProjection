@@ -7,7 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 import org.ejml.simple.SimpleMatrix;
 
-public class Cube implements GameObject {
+public class Cube extends GameObject {
 	private final SimpleMatrix modelMatrix; //Converts the object from model space to world space. Contains the information for object location, scale and rotation.
 
 	private final List<Face> faces = new ArrayList<>();
@@ -64,11 +64,24 @@ public class Cube implements GameObject {
 		}*/
 	}
 	
+	@Override
+	public Point3D getLocation() {
+		return Point3D.fromMatrix(modelMatrix.extractVector(false, 3));
+	}
+	
+	@Override
 	public void setLocation(Point3D loc) {
-		modelMatrix.setColumn(3, 0, loc.x, loc.y, loc.z); //TODO: probably wrong when rotation and scale is in matrix
+		modelMatrix.setColumn(3, 0, loc.x, loc.y, loc.z);
 	}
 	
 	public void renderWireframe(Graphics2D g, Projection projection) {
+		if (hovering) {
+			renderWireframe(g, projection, Color.YELLOW);
+		}
+		renderWireframe(g, projection, Color.RED);
+	}
+	
+	public void renderWireframe(Graphics2D g, Projection projection, Color color) {
 		for (Face face : getWorldSpaceFaces()) {
 			
 			LineSegment[] lines = face.getLines();
@@ -91,7 +104,9 @@ public class Cube implements GameObject {
 				}
 				double sRadius = Math.max(startSize / 2, 5);
 				double eRadius = Math.max(endSize / 2, 5);
-				line.render(g, sRadius, eRadius);
+				
+				line.renderDots = false;
+				line.render(g, color, sRadius, eRadius);
 			}
 		}
 	}

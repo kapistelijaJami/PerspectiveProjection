@@ -5,8 +5,16 @@ import java.awt.Graphics2D;
 import perspectiveprojection.projections.Projection;
 
 public class Ray {
-	public LineSegment ray;
+	private LineSegment ray;
 	public long creationTime;
+	
+	public Ray(Point3D start, Point3D dir, double rayLength) {
+		this(start, start.add(dir.mult(rayLength)));
+	}
+	
+	public Ray(Point3D start, Point3D end) {
+		this(new LineSegment(start, end));
+	}
 	
 	public Ray(LineSegment ray) {
 		this.ray = ray;
@@ -27,5 +35,29 @@ public class Ray {
 		}
 
 		r.render(g, Color.YELLOW, startSize, endSize);
+	}
+	
+	public LineSegment getAsLineSegment() {
+		return ray;
+	}
+	
+	public Point3D getStart() {
+		return ray.getStart();
+	}
+	
+	public Point3D getEnd() {
+		return ray.getEnd();
+	}
+	
+	public Point3D getDir() {
+		return ray.getDir();
+	}
+	
+	public double getLength() {
+		return ray.getLength();
+	}
+	
+	public Point3D getMiddle() {
+		return ray.getMiddle();
 	}
 }

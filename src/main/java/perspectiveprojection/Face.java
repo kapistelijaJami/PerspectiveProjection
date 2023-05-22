@@ -9,8 +9,10 @@ import org.ejml.simple.SimpleMatrix;
 
 public class Face implements Renderable, HasListOfPoints {
 	public List<SimpleMatrix> points = new ArrayList<>(); //right hand rule, counterclockwise winding direction
-	public Color color;
+	public Color color = Color.LIGHT_GRAY;
 	public double lightMult = 1;
+	
+	public Face() {}
 	
 	public Face(Point3D... points) {
 		this(Color.LIGHT_GRAY, points);
@@ -81,6 +83,10 @@ public class Face implements Renderable, HasListOfPoints {
 		points.add(p);
 	}
 	
+	public void addPoint(Point3D p) {
+		addPoint(p.asHomogeneousVector());
+	}
+	
 	/**
 	 * Applies a matrix to all the points and returns a new face (copy).
 	 * @param m
@@ -132,5 +138,12 @@ public class Face implements Renderable, HasListOfPoints {
 	@Override
 	public List<SimpleMatrix> getListOfPoints() {
 		return points;
+	}
+	
+	public void renderLines(Graphics2D g, Color color, double thickness) {
+		for (LineSegment line : getLines()) {
+			line.renderDots = false;
+			line.render(g, color, thickness, 0, 0);
+		}
 	}
 }

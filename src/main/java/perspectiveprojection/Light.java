@@ -6,7 +6,7 @@ import java.util.List;
 import org.ejml.simple.SimpleMatrix;
 import perspectiveprojection.projections.Projection;
 
-public class Light implements Renderable, GameObject {
+public class Light extends GameObject implements Renderable {
 	public Point3D location;
 	private double intensity = 100;
 	public double size = 50;
@@ -29,10 +29,24 @@ public class Light implements Renderable, GameObject {
 	}
 	
 	@Override
+	public Point3D getLocation() {
+		return location;
+	}
+	
+	@Override
+	public void setLocation(Point3D loc) {
+		location = loc;
+	}
+	
+	@Override
 	public void render(Graphics2D g) {
 		double radius = size / 2;
 		g.setColor(Color.YELLOW);
-		g.fillOval((int) (location.x - radius), (int) (location.y - radius), (int) size, (int) size); //TODO: the size should get transformed by perspective as well
+		g.fillOval((int) (location.x - radius), (int) (location.y - radius), (int) size, (int) size);
+		
+		if (hovering) {
+			//You can't really even see the yellow hover
+		}
 	}
 	
 	@Override
@@ -49,7 +63,7 @@ public class Light implements Renderable, GameObject {
 	public List<SimpleMatrix> getListOfPoints() {
 		return List.of(location.asMatrix());
 	}
-
+	
 	@Override
 	public void renderSelected(Graphics2D g, Projection projection) {
 		Point3D projected = projection.project(location);
@@ -59,7 +73,11 @@ public class Light implements Renderable, GameObject {
 			return;
 		}
 		double radius = s / 2;
-		g.setColor(Color.RED);
-		g.drawOval((int) (projected.x - radius), (int) (projected.y - radius), (int) (radius * 2), (int) (radius * 2)); //TODO: the size should get transformed by perspective as well
+		if (hovering) {
+			g.setColor(Color.YELLOW);
+		} else {
+			g.setColor(Color.RED);
+		}
+		g.drawOval((int) (projected.x - radius), (int) (projected.y - radius), (int) (radius * 2), (int) (radius * 2));
 	}
 }

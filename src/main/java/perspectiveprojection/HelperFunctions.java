@@ -192,14 +192,50 @@ public class HelperFunctions {
 	 * @param dir
 	 * @return 
 	 */
+	public static Double getLinePlaneIntersectionTValue(Point3D pointOnPlane, Point3D normal, Point3D start, Point3D dir) {
+		double denominator = normal.dot(dir);
+		if (denominator == 0) { //Line and plane are parallel, no intersection possible
+			return null;
+		}
+		
+		Point3D pointToPlane = pointOnPlane.subtract(start);
+		return pointToPlane.dot(normal) / denominator; //Calculate t value
+	}
+	
+	//FOR SOME REASON DOT PRODUCTS OR SOMETHING ELSE DOESN'T WORK WITH SIMPLEMATRIX, PROBABLY BECAUSE THEY DON'T KNOW HOW TO HANDLE HOMOGENEOUS COORDINATES,
+	//OR MAYBE THEY NEED TO BE COLUMN VECTORS, SO NEED TRANSPOSING?
+	
+	public static Point3D intersectionPointWithPlaneInfinite(Point3D pointOnPlane, Point3D normal, Point3D start, Point3D dir) {
+		dir.normalize();
+		Double t = getLinePlaneIntersectionTValue(pointOnPlane, normal, start, dir);
+		if (t == null) {
+			return null; //parallel
+		}
+		
+		return start.add(dir.mult(t));
+	}
+	
+	public static Point3D intersectionPointWithPlane(Point3D pointOnPlane, Point3D normal, Point3D start, Point3D end) {
+		Point3D dir = end.subtract(start);
+		
+		Double t = getLinePlaneIntersectionTValue(pointOnPlane, normal, start, dir);
+		
+		if (t == null || t < 0 || t > 1) { //Intersection point is outside the line segment
+			return null;
+		}
+		
+		return start.add(dir.mult(t));
+	}
+	
+	
 	public static Double getLinePlaneIntersectionTValue(SimpleMatrix pointOnPlane, SimpleMatrix normal, SimpleMatrix start, SimpleMatrix dir) {
 		double denominator = normal.dot(dir);
 		if (denominator == 0) { //Line and plane are parallel, no intersection possible
 			return null;
 		}
 		
-		SimpleMatrix planeToPoint = pointOnPlane.minus(start);
-		return planeToPoint.dot(normal) / denominator; //Calculate t value
+		SimpleMatrix pointToPlane = pointOnPlane.minus(start);
+		return pointToPlane.dot(normal) / denominator; //Calculate t value
 	}
 	
 	public static SimpleMatrix intersectionPointWithPlane(SimpleMatrix pointOnPlane, SimpleMatrix normal, SimpleMatrix start, SimpleMatrix end) {
@@ -213,6 +249,7 @@ public class HelperFunctions {
 		
 		return start.plus(dir.scale(t));
 	}
+	
 	
 	public static double distanceToLineSegment(Point3D p, LineSegment line) {
 		return distanceToLine(p, line.getStart(), line.getEnd());

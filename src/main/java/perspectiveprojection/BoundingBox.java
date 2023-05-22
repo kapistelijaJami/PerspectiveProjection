@@ -1,5 +1,6 @@
 package perspectiveprojection;
 
+import java.util.Arrays;
 import java.util.List;
 import org.ejml.simple.SimpleMatrix;
 
@@ -7,7 +8,7 @@ import org.ejml.simple.SimpleMatrix;
 public class BoundingBox {
 	public Point3D minPoint;
 	public Point3D maxPoint; //If sphere, min and max are the same
-	public double size; //Spherical size, even for a box shaped bounds
+	public double size; //Spherical size, even for a box shaped bounds, diameter
 	public BoundingBoxType type;
 	
 	public BoundingBox(Point3D minPoint, Point3D maxPoint) {
@@ -15,7 +16,7 @@ public class BoundingBox {
 		this.maxPoint = maxPoint;
 		type = BoundingBoxType.AXIS_ALIGNED_BOX;
 		
-		size = minPoint.subtract(getMiddle()).magnitude() * 2;
+		size = maxPoint.subtract(minPoint).magnitude();
 	}
 	
 	public BoundingBox(Point3D point, double size) {
@@ -154,6 +155,31 @@ public class BoundingBox {
 		Point3D maxPoint = point.add(s);
 		
 		return new BoundingBox(minPoint, maxPoint);
+	}
+	
+	public static BoundingBox createBoundingBoxAroundLine(LineSegment line, double thickness, BoundingBoxType type) {
+		if (type == BoundingBoxType.SPHERE) {
+			return new BoundingBox(line.getMiddle(), line.getLength());
+		}
+		
+		double s = thickness / 2.0;
+		
+		BoundingBox box = BoundingBox.createBoundingBox(Arrays.asList(line.getStart().asHomogeneousVector(), line.getEnd().asHomogeneousVector()));
+		
+		Point3D diff = box.maxPoint.subtract(box.minPoint).abs();
+		
+		if (diff.x > diff.y && diff.x > diff.z) {
+			box.minPoint = box.minPoint.subtract(new Point3D(0, s, s));
+			box.maxPoint = box.maxPoint.add(new Point3D(0, s, s));
+		} else if (diff.y > diff.x && diff.y > diff.z) {
+			box.minPoint = box.minPoint.subtract(new Point3D(s, 0, s));
+			box.maxPoint = box.maxPoint.add(new Point3D(s, 0, s));
+		} else if (diff.z > diff.x && diff.z > diff.y) {
+			box.minPoint = box.minPoint.subtract(new Point3D(s, s, 0));
+			box.maxPoint = box.maxPoint.add(new Point3D(s, s, 0));
+		}
+		
+		return box;
 	}
 
 	public final Point3D getMiddle() {

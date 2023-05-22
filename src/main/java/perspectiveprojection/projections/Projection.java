@@ -9,6 +9,7 @@ import perspectiveprojection.Frustum;
 import perspectiveprojection.Game;
 import static perspectiveprojection.Game.ambientLight;
 import perspectiveprojection.HelperFunctions;
+import perspectiveprojection.HomogneousVector;
 import perspectiveprojection.Light;
 import perspectiveprojection.LineSegment;
 import perspectiveprojection.Point3D;
@@ -129,14 +130,19 @@ public abstract class Projection {
 	 * Moves the point that is outside of the viewing frustum
 	 * to the intersection point of the line and frustum.
 	 * If both points are outside the frustum, null is returned.
-	 * @param a
-	 * @param b
+	 * @param A
+	 * @param B
 	 * @return 
 	 */
 	private SimpleMatrix[] clipLine(SimpleMatrix a, SimpleMatrix b) {
 		if (bothPointsInside(a, b)) {
 			return new SimpleMatrix[] {a, b};
 		}
+		
+		//this breaks it:
+		/*a = Point3D.fromMatrixDivideByW(a).asHomogeneousVector();
+		b = Point3D.fromMatrixDivideByW(b).asHomogeneousVector();*/
+		
 		
 		//LEFT
 		SimpleMatrix pointOnLeftPlane = new Point3D(-1, 0, 0).asHomogeneousVector();
@@ -217,19 +223,23 @@ public abstract class Projection {
 			
 			double sum = 0;
 			int count = 0;
-			for (Light light : lights) {
-				Point3D lightDir = light.location.subtract(loc);
-				double distance = lightDir.magnitude();
-				lightDir.normalize();
-				double dot = n.dot(lightDir);
-				if (dot > 0) {
-					sum += dot * (light.getIntensity() / Math.pow(distance, 2)) * Game.DEFAULT_LIGHT_INTENSITY;
-					count++;
+			if (lights != null) {
+				for (Light light : lights) {
+					Point3D lightDir = light.location.subtract(loc);
+					double distance = lightDir.magnitude();
+					lightDir.normalize();
+					double dot = n.dot(lightDir);
+					if (dot > 0) {
+						sum += dot * (light.getIntensity() / Math.pow(distance, 2)) * Game.DEFAULT_LIGHT_INTENSITY;
+						count++;
+					}
 				}
 			}
 			
-			double dot = HelperFunctions.clamp(sum / count, ambientLight, 1);
-			face.lightMult = dot;
+			if (count != 0) {
+				double dot = HelperFunctions.clamp(sum / count, ambientLight, 1);
+				face.lightMult = dot;
+			}
 			
 			//Transform face to view space:
 			face = face.applyMatrix(cam.getViewMatrix());
