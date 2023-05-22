@@ -8,7 +8,7 @@ import java.util.List;
 import org.ejml.simple.SimpleMatrix;
 
 public class Cube extends GameObject {
-	private final SimpleMatrix modelMatrix; //Converts the object from model space to world space. Contains the information for object location, scale and rotation.
+	private SimpleMatrix modelMatrix; //Converts the object from model space to world space. Contains the information for object location, scale and rotation.
 
 	private final List<Face> faces = new ArrayList<>();
 	
@@ -72,6 +72,14 @@ public class Cube extends GameObject {
 	@Override
 	public void setLocation(Point3D loc) {
 		modelMatrix.setColumn(3, 0, loc.x, loc.y, loc.z);
+	}
+	
+	public void rotate(SimpleMatrix rotate) {
+		modelMatrix = modelMatrix.mult(rotate); //this way so that model matrix is applied last, because it includes the translate information. If other way, it would rotate around origo, and the location information is lost from the last column.
+	}
+	
+	public void scale(double scalar) {
+		modelMatrix = modelMatrix.mult(SimpleMatrix.diag(scalar, scalar, scalar, 1));
 	}
 	
 	public void renderWireframe(Graphics2D g, Projection projection) {

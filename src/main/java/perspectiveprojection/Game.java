@@ -77,6 +77,9 @@ public class Game extends GameLoop { //FIXME: left side somehow clips lights too
 		
 		cube.setLocation(new Point3D(50, 50, 50));
 		smallCube.setLocation(new Point3D(500, 0, 0));
+		
+		/*cube.rotate(HelperFunctions.getRotationMatrixAroundY4By4(45));
+		cube.rotate(HelperFunctions.getRotationMatrixAroundX4By4(20));*/
 	}
 	
 	@Override
