@@ -15,7 +15,7 @@ public class Camera {
 										//We could either extract the coordinates from the matrix by inverse rotation, or keep track of
 										//them separately, which is done with the location variable.
 	
-	public double orbitPointDistance = 700;
+	public double orbitPointDistance = -1;
 	
 	public Camera() {
 		this(new Point3D());

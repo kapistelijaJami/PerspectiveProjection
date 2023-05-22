@@ -11,7 +11,7 @@ public class LineSegment {
 	private final Point3D end;
 	public boolean hasBackground = false;
 	public boolean renderDots = true;
-	public Color dotColor = Color.GREEN;
+	public Color dotColor = null;
 	public Color backgroundColor = Color.BLACK;
 	
 	public LineSegment(Point3D end) {
@@ -87,7 +87,11 @@ public class LineSegment {
 		g.drawLine((int) start.x, (int) start.y, (int) end.x, (int) end.y);
 		
 		if (renderDots) {
-			g.setColor(dotColor);
+			if (dotColor != null) {
+				g.setColor(dotColor);
+			} else {
+				g.setColor(color);
+			}
 			g.fillOval((int) (startDot.x), (int) (startDot.y), (int) (startRadius * 2), (int) (startRadius * 2));
 			g.fillOval((int) (endDot.x), (int) (endDot.y), (int) (endRadius * 2), (int) (endRadius * 2));
 		}

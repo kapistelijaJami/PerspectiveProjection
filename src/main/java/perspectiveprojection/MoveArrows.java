@@ -19,72 +19,114 @@ public class MoveArrows extends GameObject {
 	
 	
 	public void render(Graphics2D g, Point3D origin, Projection projection) {
-		double thickness = 2;
+		renderXZ(g, origin, projection, null);
+		renderXY(g, origin, projection, null);
+		renderYZ(g, origin, projection, null);
 		
+		renderX(g, origin, projection, Color.BLACK);
+		renderY(g, origin, projection, Color.BLACK);
+		renderZ(g, origin, projection, Color.BLACK);
+		
+		renderCenter(g, origin, projection, null);
+		
+		
+		//render current hover
+		if (!hovering || hoverDirection == null) {
+			return;
+		}
+		switch (hoverDirection) {
+			case X:
+				renderX(g, origin, projection, Color.YELLOW);
+				break;
+			case Y:
+				renderY(g, origin, projection, Color.YELLOW);
+				break;
+			case Z:
+				renderZ(g, origin, projection, Color.YELLOW);
+				break;
+			case XZ:
+				renderXZ(g, origin, projection, Color.YELLOW);
+				break;
+			case XY:
+				renderXY(g, origin, projection, Color.YELLOW);
+				break;
+			case YZ:
+				renderYZ(g, origin, projection, Color.YELLOW);
+				break;
+			case ALL:
+				renderCenter(g, origin, projection, Color.YELLOW);
+				break;
+		}
+	}
+	
+	private void renderX(Graphics2D g, Point3D origin, Projection projection, Color background) {
+		LineSegment line = projection.projectLineSegment(origin, origin.add(new Point3D(length, 0, 0)));
+		if (line != null) {
+			line.hasBackground = true;
+			line.backgroundColor = background;
+			line.render(g, Color.RED, lineThickness, 0, 5, true);
+		}
+	}
+	
+	private void renderY(Graphics2D g, Point3D origin, Projection projection, Color background) {
+		LineSegment line = projection.projectLineSegment(origin, origin.add(new Point3D(0, length, 0)));
+		if (line != null) {
+			line.hasBackground = true;
+			line.backgroundColor = background;
+			line.render(g, Color.GREEN, lineThickness, 0, 5, true);
+		}
+	}
+	
+	private void renderZ(Graphics2D g, Point3D origin, Projection projection, Color background) {
+		LineSegment line = projection.projectLineSegment(origin, origin.add(new Point3D(0, 0, length)));
+		if (line != null) {
+			line.hasBackground = true;
+			line.backgroundColor = background;
+			line.render(g, Color.BLUE, lineThickness, 0, 5, true);
+		}
+	}
+	
+	private void renderXZ(Graphics2D g, Point3D origin, Projection projection, Color background) {
 		List<Renderable> faces = projection.projectFaces(Arrays.asList(getXZFaceWorldSpace(origin)), null);
 		if (!faces.isEmpty()) {
 			Renderable XZ = faces.get(0);
 			XZ.render(g);
-			if (hovering && hoverDirection == MoveDirection.XZ && XZ instanceof Face) {
-				((Face) XZ).renderLines(g, Color.YELLOW, thickness);
+			if (XZ instanceof Face && background != null) {
+				((Face) XZ).renderLines(g, background, 3);
 			}
 		}
-		
-		faces = projection.projectFaces(Arrays.asList(getXYFaceWorldSpace(origin)), null);
+	}
+	
+	private void renderXY(Graphics2D g, Point3D origin, Projection projection, Color background) {
+		List<Renderable> faces = projection.projectFaces(Arrays.asList(getXYFaceWorldSpace(origin)), null);
 		if (!faces.isEmpty()) {
 			Renderable XY = faces.get(0);
 			XY.render(g);
-			if (hovering && hoverDirection == MoveDirection.XY && XY instanceof Face) {
-				((Face) XY).renderLines(g, Color.YELLOW, thickness);
+			if (XY instanceof Face && background != null) {
+				((Face) XY).renderLines(g, background, 3);
 			}
 		}
-		
-		faces = projection.projectFaces(Arrays.asList(getYZFaceWorldSpace(origin)), null);
+	}
+	
+	private void renderYZ(Graphics2D g, Point3D origin, Projection projection, Color background) {
+		List<Renderable> faces = projection.projectFaces(Arrays.asList(getYZFaceWorldSpace(origin)), null);
 		if (!faces.isEmpty()) {
 			Renderable YZ = faces.get(0);
 			YZ.render(g);
-			if (hovering && hoverDirection == MoveDirection.YZ && YZ instanceof Face) {
-				((Face) YZ).renderLines(g, Color.YELLOW, thickness);
+			if (YZ instanceof Face && background != null) {
+				((Face) YZ).renderLines(g, background, 3);
 			}
 		}
-		
-		LineSegment x = projection.projectLineSegment(origin, origin.add(new Point3D(length, 0, 0)));
-		if (x != null) {
-			x.hasBackground = true;
-			x.dotColor = Color.RED;
-			if (hovering && hoverDirection == MoveDirection.X) {
-				x.backgroundColor = Color.YELLOW;
-			}
-			x.render(g, Color.RED, lineThickness, 0, 5, true);
-		}
-		
-		LineSegment y = projection.projectLineSegment(origin, origin.add(new Point3D(0, length, 0)));
-		if (y != null) {
-			y.hasBackground = true;
-			y.dotColor = Color.GREEN;
-			if (hovering && hoverDirection == MoveDirection.Y) {
-				y.backgroundColor = Color.YELLOW;
-			}
-			y.render(g, Color.GREEN, lineThickness, 0, 5, true);
-		}
-		
-		LineSegment z = projection.projectLineSegment(origin, origin.add(new Point3D(0, 0, length)));
-		if (z != null) {
-			z.hasBackground = true;
-			z.dotColor = Color.BLUE;
-			if (hovering && hoverDirection == MoveDirection.Z) {
-				z.backgroundColor = Color.YELLOW;
-			}
-			z.render(g, Color.BLUE, lineThickness, 0, 5, true);
-		}
-		
+	}
+	
+	private void renderCenter(Graphics2D g, Point3D origin, Projection projection, Color color) {
 		Point3D p = projection.project(origin);
 		if (p != null) {
 			double unit = length / 3.0 / 2.0;
 			unit = projection.getProjectedSize(origin, unit, unit);
 			
-			if (hovering && hoverDirection == MoveDirection.ALL) {
-				g.setColor(Color.YELLOW);
+			if (color != null) {
+				g.setColor(color);
 				g.setStroke(new BasicStroke(3));
 			} else {
 				g.setColor(Color.WHITE);
@@ -233,4 +275,7 @@ public class MoveArrows extends GameObject {
 	public void setSelectedDirection(MoveDirection selectedDirection) {
 		this.selectedDirection = selectedDirection;
 	}
+
+	@Override
+	public void renderHover(Graphics2D g, Projection projection) {}
 }

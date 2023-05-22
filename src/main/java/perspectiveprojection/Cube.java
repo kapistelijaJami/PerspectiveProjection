@@ -138,4 +138,9 @@ public class Cube extends GameObject {
 	public void renderSelected(Graphics2D g, Projection projection) {
 		renderWireframe(g, projection);
 	}
+
+	@Override
+	public void renderHover(Graphics2D g, Projection projection) {
+		renderWireframe(g, projection, Color.yellow);
+	}
 }

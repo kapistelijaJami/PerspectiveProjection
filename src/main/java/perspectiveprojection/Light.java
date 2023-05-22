@@ -43,10 +43,6 @@ public class Light extends GameObject implements Renderable {
 		double radius = size / 2;
 		g.setColor(Color.YELLOW);
 		g.fillOval((int) (location.x - radius), (int) (location.y - radius), (int) size, (int) size);
-		
-		if (hovering) {
-			//You can't really even see the yellow hover
-		}
 	}
 	
 	@Override
@@ -73,11 +69,22 @@ public class Light extends GameObject implements Renderable {
 			return;
 		}
 		double radius = s / 2;
-		if (hovering) {
-			g.setColor(Color.YELLOW);
-		} else {
-			g.setColor(Color.RED);
+		
+		g.setColor(Color.RED);
+		g.drawOval((int) (projected.x - radius), (int) (projected.y - radius), (int) (radius * 2), (int) (radius * 2));
+	}
+
+	@Override
+	public void renderHover(Graphics2D g, Projection projection) {
+		Point3D projected = projection.project(location);
+		
+		Double s = projection.getProjectedSize(location, size);
+		if (s == null) {
+			return;
 		}
+		double radius = s / 2;
+		
+		g.setColor(Color.YELLOW);
 		g.drawOval((int) (projected.x - radius), (int) (projected.y - radius), (int) (radius * 2), (int) (radius * 2));
 	}
 }

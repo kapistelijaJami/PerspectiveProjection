@@ -4,6 +4,8 @@ import java.awt.AWTException;
 import java.awt.Cursor;
 import java.awt.Point;
 import java.awt.Robot;
+import java.awt.event.ComponentEvent;
+import java.awt.event.ComponentListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
@@ -12,7 +14,7 @@ import java.awt.event.MouseWheelListener;
 import javax.swing.SwingUtilities;
 import javax.swing.event.MouseInputListener;
 
-public class KeyInput implements MouseInputListener, MouseWheelListener, KeyListener {
+public class KeyInput implements MouseInputListener, MouseWheelListener, KeyListener, ComponentListener {
 	private Game game;
 	private Point clickLoc; //where was the click location of the mouse relative to the screen
 	
@@ -42,7 +44,7 @@ public class KeyInput implements MouseInputListener, MouseWheelListener, KeyList
 		//clickLoc = e.getPoint();
 		clickLoc = e.getLocationOnScreen();
 		
-		if (game.clickMoveSelected(e.getX(), e.getY(), this)) {
+		if (SwingUtilities.isLeftMouseButton(e) && game.clickMoveSelected(e.getX(), e.getY(), this)) {
 			currentMoveLocation = game.projectToMoveDirection(e.getX(), e.getY(), movingDirection, null);
 		}
 	}
@@ -73,9 +75,7 @@ public class KeyInput implements MouseInputListener, MouseWheelListener, KeyList
 	@Override
 	public void mouseDragged(MouseEvent e) {
 		//Point p = e.getPoint();
-		Point p = e.getLocationOnScreen();
 		//Point p = MouseInfo.getPointerInfo().getLocation(); //if we were to reset mouse location somewhere other than where it was clicked, this is needed, since e could have old information.
-		
 		
 		
 		if (moving) {
@@ -88,6 +88,7 @@ public class KeyInput implements MouseInputListener, MouseWheelListener, KeyList
 				currentMoveLocation = newMoveLocation;
 			}
 		} else {
+			Point p = e.getLocationOnScreen();
 			Point2D diff = new Point2D(p.x - clickLoc.x, p.y - clickLoc.y);
 			
 			if (!dragging && diff.magnitude() < 5) { //How long does the distance have to be to be considered a drag instead of a click
@@ -276,4 +277,18 @@ public class KeyInput implements MouseInputListener, MouseWheelListener, KeyList
 		moving = true;
 		this.movingDirection = movingDirection;
 	}
+
+	@Override
+	public void componentResized(ComponentEvent e) {
+		game.windowResized(e.getComponent().getSize());
+	}
+
+	@Override
+	public void componentMoved(ComponentEvent e) {}
+
+	@Override
+	public void componentShown(ComponentEvent e) {}
+
+	@Override
+	public void componentHidden(ComponentEvent e) {}
 }

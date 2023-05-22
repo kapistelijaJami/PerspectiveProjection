@@ -4,6 +4,7 @@ import java.awt.Canvas;
 import perspectiveprojection.projections.Projection;
 import java.awt.Color;
 import java.awt.Cursor;
+import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.Point;
 import java.util.ArrayList;
@@ -22,7 +23,7 @@ public class Game extends GameLoop { //FIXME: left side somehow clips lights too
 	private final Camera cam = new Camera(new Point3D(400, 500, 800)); //def: (, 800)
 	private final Cube cube = new Cube(100, true);
 	private final Cube smallCube = new Cube(70, false);
-	private final Projection projection = new PerspectiveProjection(cam);
+	private Projection projection = new PerspectiveProjection(cam);
 	//private Projection projection = new OrthographicProjection(cam);
 	
 	private final Light[] lights = new Light[] {new Light(800, 1000, 400), new Light(-500, -300, -400)};
@@ -72,6 +73,7 @@ public class Game extends GameLoop { //FIXME: left side somehow clips lights too
 		canvas.addMouseListener(input);
 		canvas.addMouseMotionListener(input);
 		canvas.addMouseWheelListener(input);
+		window.addComponentListener(input);
 		
 		cube.setLocation(new Point3D(50, 50, 50));
 		smallCube.setLocation(new Point3D(500, 0, 0));
@@ -158,6 +160,9 @@ public class Game extends GameLoop { //FIXME: left side somehow clips lights too
 			}
 		}
 		if (p == null) {
+			if (cam.orbitPointDistance == -1) {
+				cam.orbitPointDistance = cam.getLoc().distanceFrom(new Point3D());
+			}
 			p = cam.getLoc().add(cam.getForward().mult(cam.orbitPointDistance));
 		}
 		return p;
@@ -203,6 +208,10 @@ public class Game extends GameLoop { //FIXME: left side somehow clips lights too
 			Point3D mid = selected.getBoundingBox().getMiddle();
 			selected.renderSelected(g, projection);
 			selected.moveArrows.render(g, mid, projection);
+		}
+		
+		if (hovering != null && hovering != selected) {
+			hovering.renderHover(g, projection);
 		}
 		
 		window.display(g);
@@ -442,10 +451,12 @@ public class Game extends GameLoop { //FIXME: left side somehow clips lights too
 			case X:
 				//With one direction only, you can choose the plane. Let's take XY
 				projected = HelperFunctions.intersectionPointWithPlaneInfinite(mid, Point3D.getZ(), ray.getStart(), ray.getDir());
+				//projected = HelperFunctions.intersectionPointWithPlaneInfinite(mid, Point3D.getX().cross(cam.getForward()).normalize(), ray.getStart(), ray.getDir());
 				break;
 			case Y:
 				//Let's take XY
 				projected = HelperFunctions.intersectionPointWithPlaneInfinite(mid, Point3D.getZ(), ray.getStart(), ray.getDir());
+				//projected = HelperFunctions.intersectionPointWithPlaneInfinite(mid, Point3D.getY().cross(cam.getForward()).normalize(), ray.getStart(), ray.getDir());
 				break;
 			case Z:
 				//Let's take XZ
@@ -524,18 +535,21 @@ public class Game extends GameLoop { //FIXME: left side somehow clips lights too
 			}
 		}
 		
-		//System.out.println("kol");
-		
 		List<GameObject> objects = intersects(ray);
 		if (!objects.isEmpty()) {
-			//System.out.println("nel");
 			hovering = objects.get(0);
+			hovering.hover();
 		} else {
-			//System.out.println("viis");
 			if (hovering != null) {
 				hovering.unhover();
 				hovering = null;
 			}
 		}
+	}
+
+	public void windowResized(Dimension size) {
+		WIDTH = size.width;
+		HEIGHT = size.height;
+		projection = new PerspectiveProjection(cam);
 	}
 }
