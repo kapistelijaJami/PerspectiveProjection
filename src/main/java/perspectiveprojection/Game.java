@@ -9,7 +9,6 @@ import perspectiveprojection.linear_algebra.Point2D;
 import perspectiveprojection.transformations.ViewportTransformation;
 import perspectiveprojection.linear_algebra.Point3D;
 import perspectiveprojection.objects.Ray;
-import perspectiveprojection.input.ButtonsDown;
 import perspectiveprojection.input.KeyInput;
 import perspectiveprojection.objects.Cube;
 import perspectiveprojection.camera.Camera;
@@ -20,10 +19,8 @@ import perspectiveprojection.objects.MoveArrows;
 import java.awt.Canvas;
 import perspectiveprojection.transformations.projections.Projection;
 import java.awt.Color;
-import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
-import java.awt.Point;
 import java.awt.event.KeyEvent;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -35,13 +32,18 @@ import uilibrary.GameLoop;
 import uilibrary.Window;
 
 public class Game extends GameLoop { //FIXME: left side somehow clips lights too early.
-	private final Window window;
+	public static int WIDTH = 1280;
+	public static int HEIGHT = 720;
+	public static int FOV = 60; //def: 60, vertical FOV
+	public static int DEFAULT_RAY_LENGTH = 10000;
 	
 	//perspective good location when translate first, then rotate: loc (586.0, 691.0, 1202.0) yaw -26.0 pitch -153.0
 	//private Camera cam = new Camera(new Point3D(500, 700, 800)); //(new Point3D(-400, 300, 500), -25, 28) works with ortographic (origo might be behind camera). Should be able to work with others with these settings as well
 	private final Camera cam = new Camera(new Point3D(400, 500, 800)); //def: (, 800)
 	private final Cube cube = new Cube(100, true);
 	private final Cube smallCube = new Cube(70, false);
+	
+	private final Window window;
 	private Projection projection = new PerspectiveProjection(cam);
 	//private Projection projection = new OrthographicProjection(cam);
 	
@@ -56,13 +58,9 @@ public class Game extends GameLoop { //FIXME: left side somehow clips lights too
 	private Double newYaw = null;
 	private Double newPitch = null;
 	
-	public static int WIDTH = 1280;
-	public static int HEIGHT = 720;
-	public static int FOV = 60; //def: 60, vertical FOV
-	public static int DEFAULT_RAY_LENGTH = 10000;
-	
-	private GameObject selected;
-	private GameObject hovering;
+	private final Object lock = new Object();
+	private volatile GameObject selected;
+	private volatile GameObject hovering;
 	
 	private final List<Ray> rays = new ArrayList<>();
 	
@@ -81,7 +79,7 @@ public class Game extends GameLoop { //FIXME: left side somehow clips lights too
 		canvas.addMouseListener(input);
 		canvas.addMouseMotionListener(input);
 		canvas.addMouseWheelListener(input);
-		window.addComponentListener(input);
+		canvas.addComponentListener(input);
 		
 		cube.setLocation(new Point3D(50, 50, 50));
 		smallCube.setLocation(new Point3D(500, 0, 0));
@@ -192,13 +190,14 @@ public class Game extends GameLoop { //FIXME: left side somehow clips lights too
 		transformed.addAll(projection.projectFaces(smallCube.getWorldSpaceFaces(), lights));
 		
 		for (Light light : lights) {
-			Point3D p = projection.project(light.location);
-			
-			Optional<Double> size = projection.getProjectedSize(light.location, light.size);
-			if (size.isEmpty()) {
+			Point3D p = projection.project(light.location, true);
+			if (p == null) {
 				continue;
 			}
-			transformed.add(new Light(p, size.get()));
+			
+			double size = projection.getProjectedSize(light.location, light.size);
+			
+			transformed.add(new Light(p, size));
 		}
 		
 		transformed.sort(null);
@@ -211,17 +210,15 @@ public class Game extends GameLoop { //FIXME: left side somehow clips lights too
 			ray.render(g, projection);
 		}
 		
-		/*cube.renderWireframe(g, projection);
-		smallCube.renderWireframe(g, projection);*/
-		
-		if (selected != null) {
-			Point3D mid = selected.getBoundingBox().getMiddle();
-			selected.renderSelected(g, projection);
-			selected.moveArrows.render(g, projection);
-		}
-		
-		if (hovering != null && hovering != selected) {
-			hovering.renderHover(g, projection);
+		synchronized (lock) {
+			if (selected != null) {
+				selected.renderSelected(g, projection);
+				selected.moveArrows.render(g, projection);
+			}
+			
+			if (hovering != null && hovering != selected) {
+				hovering.renderHover(g, projection);
+			}
 		}
 		
 		window.display(g);
@@ -236,26 +233,26 @@ public class Game extends GameLoop { //FIXME: left side somehow clips lights too
 		Point3D start = new Point3D(0, 0, 0);
 		
 		Point3D xAxis = new Point3D(axisLength, 0, 0);
-		LineSegment x = projection.projectLineSegment(start, xAxis);
+		Optional<LineSegment> x = projection.projectLineSegment(start, xAxis);
 		
-		if (x != null) {
-			x.render(g, Color.red, pointSize, pointSize);
+		if (x.isPresent()) {
+			x.get().render(g, Color.red, pointSize, pointSize);
 		}
 		
 		
 		Point3D yAxis = new Point3D(0, axisLength, 0);
-		LineSegment y = projection.projectLineSegment(start, yAxis);
+		Optional<LineSegment> y = projection.projectLineSegment(start, yAxis);
 		
-		if (y != null) {
-			y.render(g, Color.green, pointSize, pointSize);
+		if (y.isPresent()) {
+			y.get().render(g, Color.green, pointSize, pointSize);
 		}
 		
 		
 		Point3D zAxis = new Point3D(0, 0, axisLength);
-		LineSegment z = projection.projectLineSegment(start, zAxis);
+		Optional<LineSegment> z = projection.projectLineSegment(start, zAxis);
 		
-		if (z != null) {
-			z.render(g, Color.blue, pointSize, pointSize);
+		if (z.isPresent()) {
+			z.get().render(g, Color.blue, pointSize, pointSize);
 		}
 	}
 	
@@ -308,7 +305,9 @@ public class Game extends GameLoop { //FIXME: left side somehow clips lights too
 				selected.moveArrows = new MoveArrows(mid);
 			}
 		} else {
-			selected = null;
+			synchronized (lock) {
+				selected = null;
+			}
 		}
 	}
 	
@@ -531,17 +530,15 @@ public class Game extends GameLoop { //FIXME: left side somehow clips lights too
 		if (selected != null) {
 			MoveDirection direction = intersectsMoveDirection(ray, selected);
 			if (direction != null) {
-				//System.out.println("yks");
 				hovering = selected.moveArrows;
-				//hovering.hover();
 				
 				selected.moveArrows.setHoverDirection(direction);
 				return;
 			} else {
-				//System.out.println("kaks");
-				if (hovering != null) {
-					//hovering.unhover();
-					hovering = null;
+				synchronized (lock) {
+					if (hovering != null) {
+						hovering = null;
+					}
 				}
 			}
 		}
@@ -549,11 +546,11 @@ public class Game extends GameLoop { //FIXME: left side somehow clips lights too
 		List<GameObject> objects = intersects(ray);
 		if (!objects.isEmpty()) {
 			hovering = objects.get(0);
-			//hovering.hover();
 		} else {
-			if (hovering != null) {
-				//hovering.unhover();
-				hovering = null;
+			synchronized (lock) {
+				if (hovering != null) {
+					hovering = null;
+				}
 			}
 		}
 	}

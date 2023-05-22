@@ -15,6 +15,7 @@ public class Cube extends GameObject {
 	private SimpleMatrix modelMatrix; //Converts the object from model space to world space. Contains the information for object location, scale and rotation.
 	
 	private final List<Face> faces = new ArrayList<>();
+	public boolean renderDots = false;
 	
 	public Cube(double cubeSize, boolean multipleColors) { //If cube size is 100, then the cube is 100x100x100, it will be -50 to 50 around origo if no other transformations are added.
 		modelMatrix = SimpleMatrix.diag(cubeSize / 2, cubeSize / 2, cubeSize / 2, 1);
@@ -65,19 +66,21 @@ public class Cube extends GameObject {
 			for (LineSegment line : lines) {
 				Point3D start = line.getStart();
 				Point3D end = line.getEnd();
-				line = projection.projectLineSegment(line);
-				if (line == null) {
+				
+				Optional<LineSegment> result = projection.projectLineSegment(line);
+				if (result.isEmpty()) {
 					continue;
 				}
+				line = result.get();
 				
 				int pointSize = 10;
-				double startSize = projection.getProjectedSize(start, pointSize, pointSize);
-				double endSize = projection.getProjectedSize(end, pointSize, pointSize);
+				double startSize = projection.getProjectedSize(start, pointSize);
+				double endSize = projection.getProjectedSize(end, pointSize);
 				
 				double sRadius = Math.max(startSize / 2, 5);
 				double eRadius = Math.max(endSize / 2, 5);
 				
-				line.renderDots = false;
+				line.renderDots = renderDots;
 				line.render(g, color, sRadius, eRadius);
 			}
 		}

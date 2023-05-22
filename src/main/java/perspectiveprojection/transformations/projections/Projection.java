@@ -10,7 +10,6 @@ import perspectiveprojection.camera.Frustum;
 import perspectiveprojection.Game;
 import static perspectiveprojection.Game.ambientLight;
 import perspectiveprojection.util.HelperFunctions;
-import perspectiveprojection.linear_algebra.HomogneousVector;
 import perspectiveprojection.objects.Light;
 import perspectiveprojection.primitives.LineSegment;
 import perspectiveprojection.linear_algebra.Point3D;
@@ -30,38 +29,18 @@ public abstract class Projection {
 		return cam;
 	}
 	
-	public Point3D project(SimpleMatrix point) {
-		return project(Point3D.fromMatrix(point));
+	public Point3D project(SimpleMatrix point, boolean clipPoint) {
+		return project(Point3D.fromMatrix(point), clipPoint);
 	}
 	
-	public Point3D project(Point3D point) {
+	public Point3D project(Point3D point, boolean clipPoint) {
 		SimpleMatrix clipSpacePoint = projectToClipSpace(point);
 		
-		if (!pointInside(clipSpacePoint)) {
+		if (clipPoint && !pointInside(clipSpacePoint)) {
 			return null;
 		}
 		
 		return ViewportTransformation.fromClipSpaceToScreenSpace(clipSpacePoint, Game.WIDTH, Game.HEIGHT);
-	}
-	
-	public Point3D[] projectPoints(Point3D... points) {
-		Point3D[] projectedPoints = new Point3D[points.length];
-		
-		for (int i = 0; i < points.length; i++) {
-			projectedPoints[i] = project(points[i]);
-		}
-		
-		return projectedPoints;
-	}
-	
-	public Point3D[] projectPointsInt(Point3D... points) {
-		Point3D[] projectedPoints = new Point3D[points.length];
-		
-		for (int i = 0; i < points.length; i++) {
-			projectedPoints[i] = project(points[i]);
-		}
-		
-		return projectedPoints;
 	}
 	
 	/**
@@ -88,15 +67,15 @@ public abstract class Projection {
 		return clipSpace;
 	}
 	
-	public LineSegment projectLineSegment(LineSegment line) {
+	public Optional<LineSegment> projectLineSegment(LineSegment line) {
 		return projectLineSegment(line.getStart(), line.getEnd());
 	}
 	
-	public LineSegment projectLineSegment(Point3D a, Point3D b) {
+	public Optional<LineSegment> projectLineSegment(Point3D a, Point3D b) {
 		return projectLineSegment(a.asHomogeneousVector(), b.asHomogeneousVector());
 	}
 	
-	public LineSegment projectLineSegment(Point3D end) {
+	public Optional<LineSegment> projectLineSegment(Point3D end) {
 		return projectLineSegment(new Point3D(0, 0, 0), end);
 	}
 	
@@ -107,7 +86,7 @@ public abstract class Projection {
 	 * @param b
 	 * @return 
 	 */
-	public LineSegment projectLineSegment(SimpleMatrix a, SimpleMatrix b) {
+	public Optional<LineSegment> projectLineSegment(SimpleMatrix a, SimpleMatrix b) {
 		SimpleMatrix clipSpaceA = projectToClipSpace(a);
 		SimpleMatrix clipSpaceB = projectToClipSpace(b);
 		
@@ -117,13 +96,13 @@ public abstract class Projection {
 		//Do frustum clipping/culling:
 		SimpleMatrix[] clipped = clipLine(clipSpaceA, clipSpaceB);
 		if (clipped == null) {
-			return null;
+			return Optional.empty();
 		}
 		
 		Point3D viewA = ViewportTransformation.fromClipSpaceToScreenSpace(clipped[0], Game.WIDTH, Game.HEIGHT);
 		Point3D viewB = ViewportTransformation.fromClipSpaceToScreenSpace(clipped[1], Game.WIDTH, Game.HEIGHT);
 		
-		return new LineSegment(viewA, viewB);
+		return Optional.of(new LineSegment(viewA, viewB));
 	}
 	
 	/**
@@ -140,7 +119,7 @@ public abstract class Projection {
 			return new SimpleMatrix[] {a, b};
 		}
 		
-		//this breaks it:
+		//this breaks it: //TODO: find out why
 		/*a = Point3D.fromMatrixDivideByW(a).asHomogeneousVector();
 		b = Point3D.fromMatrixDivideByW(b).asHomogeneousVector();*/
 		
@@ -155,7 +134,7 @@ public abstract class Projection {
 		
 		if (a == null || b == null) return null; //If one of them is null, then the whole line segment was outside of the plane
 		
-		//RIGHT //TODO: right and bottom side doesn't get clipped
+		//RIGHT
 		SimpleMatrix pointOnRightPlane = new Point3D(1, 0, 0).asHomogeneousVector();
 		if (a.get(0) > a.get(3)) {
 			a = HelperFunctions.intersectionPointWithPlane(pointOnRightPlane, frustum.right, a, b);
@@ -318,24 +297,14 @@ public abstract class Projection {
 		return transformed;
 	}
 	
-	public Optional<Double> getProjectedSize(Point3D location, double size) {
-		Point3D p = project(location);
-		if (p == null) {
-			return Optional.empty();
-		}
-		Point3D sizeVec = project(location.add(cam.getLeft().mult(size)));
-		if (sizeVec == null) {
-			return Optional.empty();
-		}
+	public double getProjectedSizeMultiplier(Point3D location) {
+		Point3D start = project(location, false);
+		Point3D end = project(location.add(cam.getLeft()), false);
 		
-		return Optional.of(sizeVec.subtract(p).magnitude());
+		return start.subtract(end).magnitude();
 	}
 	
-	public double getProjectedSize(Point3D location, double size, double defaultSize) {
-		Optional<Double> d = getProjectedSize(location, size);
-		if (d.isEmpty()) {
-			return defaultSize;
-		}
-		return d.get();
+	public double getProjectedSize(Point3D location, double size) {
+		return getProjectedSizeMultiplier(location) * size;
 	}
 }

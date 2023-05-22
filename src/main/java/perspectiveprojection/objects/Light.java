@@ -3,7 +3,6 @@ package perspectiveprojection.objects;
 import perspectiveprojection.enums.BoundingBoxType;
 import perspectiveprojection.primitives.BoundingBox;
 import perspectiveprojection.linear_algebra.Point3D;
-import perspectiveprojection.objects.GameObject;
 import perspectiveprojection.interfaces.Renderable;
 import java.awt.Color;
 import java.awt.Graphics2D;
@@ -68,13 +67,13 @@ public class Light extends GameObject implements Renderable {
 	
 	@Override
 	public void renderSelected(Graphics2D g, Projection projection) {
-		Point3D projected = projection.project(location);
-		
-		Optional<Double> s = projection.getProjectedSize(location, size);
-		if (s.isEmpty()) {
+		Point3D projected = projection.project(location, true);
+		if (projected == null) {
 			return;
 		}
-		double radius = s.get() / 2;
+		
+		double s = projection.getProjectedSize(location, size);
+		double radius = s / 2;
 		
 		g.setColor(Color.RED);
 		g.drawOval((int) (projected.x - radius), (int) (projected.y - radius), (int) (radius * 2), (int) (radius * 2));
@@ -82,13 +81,13 @@ public class Light extends GameObject implements Renderable {
 	
 	@Override
 	public void renderHover(Graphics2D g, Projection projection) {
-		Point3D projected = projection.project(location);
-		
-		Optional<Double> s = projection.getProjectedSize(location, size);
-		if (s.isEmpty()) {
+		Point3D projected = projection.project(location, true);
+		if (projected == null) {
 			return;
 		}
-		double radius = s.get() / 2;
+		
+		double s = projection.getProjectedSize(location, size);
+		double radius = s / 2;
 		
 		g.setColor(Color.YELLOW);
 		g.drawOval((int) (projected.x - radius), (int) (projected.y - radius), (int) (radius * 2), (int) (radius * 2));

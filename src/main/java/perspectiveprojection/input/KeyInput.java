@@ -84,7 +84,6 @@ public class KeyInput implements MouseInputListener, MouseWheelListener, KeyList
 	public void mouseDragged(MouseEvent e) {
 		//Point p = MouseInfo.getPointerInfo().getLocation(); //if we were to reset mouse location somewhere other than where it was clicked, this is needed, since e could have old information.
 		
-		
 		if (moving) {
 			if (SwingUtilities.isLeftMouseButton(e)) {
 				Point3D newMoveLocation = game.projectToMoveDirection(e.getX(), e.getY(), movingDirection, currentMoveLocation);

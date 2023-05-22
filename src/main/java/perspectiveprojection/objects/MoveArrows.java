@@ -6,6 +6,7 @@ import java.awt.Graphics2D;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import org.ejml.simple.SimpleMatrix;
 import perspectiveprojection.primitives.BoundingBox;
 import perspectiveprojection.enums.BoundingBoxType;
@@ -20,7 +21,7 @@ import perspectiveprojection.transformations.projections.Projection;
 public class MoveArrows extends GameObject {
 	public int lineThickness = 3;
 	public int hitboxThickness = 15;
-	public int length = 70;
+	public int length = 60;
 	
 	private Point3D origin;
 	private MoveDirection selectedDirection;
@@ -43,8 +44,9 @@ public class MoveArrows extends GameObject {
 	}
 	
 	private void renderX(Graphics2D g, Projection projection, Color background) {
-		LineSegment line = projection.projectLineSegment(origin, origin.add(new Point3D(length, 0, 0)));
-		if (line != null) {
+		Optional<LineSegment> result = projection.projectLineSegment(getXLineSegment());
+		if (result.isPresent()) {
+			LineSegment line = result.get();
 			line.hasBackground = true;
 			line.backgroundColor = background;
 			line.render(g, Color.RED, lineThickness, 0, 5, true);
@@ -52,8 +54,9 @@ public class MoveArrows extends GameObject {
 	}
 	
 	private void renderY(Graphics2D g, Projection projection, Color background) {
-		LineSegment line = projection.projectLineSegment(origin, origin.add(new Point3D(0, length, 0)));
-		if (line != null) {
+		Optional<LineSegment> result = projection.projectLineSegment(getYLineSegment());
+		if (result.isPresent()) {
+			LineSegment line = result.get();
 			line.hasBackground = true;
 			line.backgroundColor = background;
 			line.render(g, Color.GREEN, lineThickness, 0, 5, true);
@@ -61,8 +64,9 @@ public class MoveArrows extends GameObject {
 	}
 	
 	private void renderZ(Graphics2D g, Projection projection, Color background) {
-		LineSegment line = projection.projectLineSegment(origin, origin.add(new Point3D(0, 0, length)));
-		if (line != null) {
+		Optional<LineSegment> result = projection.projectLineSegment(getZLineSegment());
+		if (result.isPresent()) {
+			LineSegment line = result.get();
 			line.hasBackground = true;
 			line.backgroundColor = background;
 			line.render(g, Color.BLUE, lineThickness, 0, 5, true);
@@ -103,20 +107,22 @@ public class MoveArrows extends GameObject {
 	}
 	
 	private void renderCenter(Graphics2D g, Projection projection, Color color) {
-		Point3D p = projection.project(origin);
-		if (p != null) {
-			double unit = length / 3.0 / 2.0;
-			unit = projection.getProjectedSize(origin, unit, unit);
-			
-			if (color != null) {
-				g.setColor(color);
-				g.setStroke(new BasicStroke(3));
-			} else {
-				g.setColor(Color.WHITE);
-				g.setStroke(new BasicStroke(1));
-			}
-			g.drawRect((int) (p.x - unit), (int) (p.y - unit), (int) (unit * 2), (int) (unit * 2));
+		Point3D p = projection.project(origin, true);
+		if (p == null) {
+			return;
 		}
+		
+		double unit = length / 3.0 / 2.0;
+		unit = projection.getProjectedSize(origin, unit);
+
+		if (color != null) {
+			g.setColor(color);
+			g.setStroke(new BasicStroke(3));
+		} else {
+			g.setColor(Color.WHITE);
+			g.setStroke(new BasicStroke(1));
+		}
+		g.drawRect((int) (p.x - unit), (int) (p.y - unit), (int) (unit * 2), (int) (unit * 2));
 	}
 	
 	private void renderCurrentHover(Graphics2D g, Projection projection) {
@@ -151,18 +157,33 @@ public class MoveArrows extends GameObject {
 	}
 	
 	public BoundingBox getXBoundingBox(Point3D origin) {
-		LineSegment x = new LineSegment(origin, origin.add(new Point3D(length, 0, 0)));
-		return BoundingBox.createBoundingBoxAroundLine(x, hitboxThickness, BoundingBoxType.AXIS_ALIGNED_BOX);
+		return BoundingBox.createBoundingBoxAroundLine(getXLineSegment(), hitboxThickness, BoundingBoxType.AXIS_ALIGNED_BOX);
 	}
 	
 	public BoundingBox getYBoundingBox(Point3D origin) {
-		LineSegment y = new LineSegment(origin, origin.add(new Point3D(0, length, 0)));
-		return BoundingBox.createBoundingBoxAroundLine(y, hitboxThickness, BoundingBoxType.AXIS_ALIGNED_BOX);
+		return BoundingBox.createBoundingBoxAroundLine(getYLineSegment(), hitboxThickness, BoundingBoxType.AXIS_ALIGNED_BOX);
 	}
 	
 	public BoundingBox getZBoundingBox(Point3D origin) {
-		LineSegment z = new LineSegment(origin, origin.add(new Point3D(0, 0, length)));
-		return BoundingBox.createBoundingBoxAroundLine(z, hitboxThickness, BoundingBoxType.AXIS_ALIGNED_BOX);
+		return BoundingBox.createBoundingBoxAroundLine(getZLineSegment(), hitboxThickness, BoundingBoxType.AXIS_ALIGNED_BOX);
+	}
+	
+	private LineSegment getXLineSegment() {
+		double unit = length / 3.0;
+		Point3D offset = origin.add(new Point3D(unit, 0, 0));
+		return new LineSegment(offset, offset.add(new Point3D(length, 0, 0)));
+	}
+	
+	private LineSegment getYLineSegment() {
+		double unit = length / 3.0;
+		Point3D offset = origin.add(new Point3D(0, unit, 0));
+		return new LineSegment(offset, offset.add(new Point3D(0, length, 0)));
+	}
+	
+	private LineSegment getZLineSegment() {
+		double unit = length / 3.0;
+		Point3D offset = origin.add(new Point3D(0, 0, unit));
+		return new LineSegment(offset, offset.add(new Point3D(0, 0, length)));
 	}
 	
 	private Face getXZFace() {
