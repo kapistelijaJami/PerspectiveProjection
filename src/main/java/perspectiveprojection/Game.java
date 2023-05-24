@@ -144,10 +144,10 @@ public class Game extends GameLoop { //FIXME: left side somehow clips lights too
 			cam.moveForward(-speed);
 		}
 		if (input.isButtonDown(KeyEvent.VK_A)) {
-			cam.moveRight(-speed);
+			cam.moveLeft(speed);
 		}
 		if (input.isButtonDown(KeyEvent.VK_D)) {
-			cam.moveRight(speed);
+			cam.moveLeft(-speed);
 		}
 		
 		if (input.isButtonDown(KeyEvent.VK_SHIFT) || input.isButtonDown(KeyEvent.VK_SPACE)) {
@@ -454,23 +454,27 @@ public class Game extends GameLoop { //FIXME: left side somehow clips lights too
 		}
 		
 		Ray ray = createRay(x, y);
-		
 		Point3D projected = new Point3D(x, y, 0);
 		
 		switch (movingDirection) {
 			case X:
-				//With one direction only, you can choose the plane. Let's take XY
-				projected = HelperFunctions.intersectionPointWithPlaneInfinite(mid, Point3D.getZ(), ray.getStart(), ray.getDir());
-				//projected = HelperFunctions.intersectionPointWithPlaneInfinite(mid, Point3D.getX().cross(cam.getForward()).normalize(), ray.getStart(), ray.getDir());
+				//With one direction only, you can choose the plane. Let's calculate one that is towards the camera, but perpendicular to the X axis
+				//mid.subtract(cam.getLoc()) I thought about using this instead of forward vector, since it's more accurate towards cam, but when the object moves, the plane moves too.
+				Point3D normal = Point3D.getX().cross(cam.getForward()).normalize();
+				normal = Point3D.getX().cross(normal);
+				projected = HelperFunctions.intersectionPointWithPlaneInfinite(mid, normal, ray.getStart(), ray.getDir());
 				break;
 			case Y:
-				//Let's take XY
-				projected = HelperFunctions.intersectionPointWithPlaneInfinite(mid, Point3D.getZ(), ray.getStart(), ray.getDir());
-				//projected = HelperFunctions.intersectionPointWithPlaneInfinite(mid, Point3D.getY().cross(cam.getForward()).normalize(), ray.getStart(), ray.getDir());
+				//With one direction only, you can choose the plane. Let's calculate one that is towards the camera, but perpendicular to the Y axis
+				normal = Point3D.getY().cross(cam.getForward()).normalize();
+				normal = Point3D.getY().cross(normal);
+				projected = HelperFunctions.intersectionPointWithPlaneInfinite(mid, normal, ray.getStart(), ray.getDir());
 				break;
 			case Z:
-				//Let's take XZ
-				projected = HelperFunctions.intersectionPointWithPlaneInfinite(mid, Point3D.getY(), ray.getStart(), ray.getDir());
+				//With one direction only, you can choose the plane. Let's calculate one that is towards the camera, but perpendicular to the Z axis
+				normal = Point3D.getZ().cross(cam.getForward()).normalize();
+				normal = Point3D.getZ().cross(normal);
+				projected = HelperFunctions.intersectionPointWithPlaneInfinite(mid, normal, ray.getStart(), ray.getDir());
 				break;
 			case XZ:
 				projected = HelperFunctions.intersectionPointWithPlaneInfinite(mid, Point3D.getY(), ray.getStart(), ray.getDir());
@@ -489,16 +493,15 @@ public class Game extends GameLoop { //FIXME: left side somehow clips lights too
 		
 		return projected;
 	}
-
+	
 	public void moveSelected(MoveDirection movingDirection, Point3D diff) {
 		if (selected == null) {
 			return;
 		}
 		
-		//TODO: Project to different plane, which is oriented towards camera better. Now if XY projection, and you look down, you cant move
 		switch (movingDirection) {
 			case X:
-				selected.moveRight(diff.x);
+				selected.moveLeft(diff.x);
 				break;
 			case Y:
 				selected.moveUp(diff.y);
@@ -507,11 +510,11 @@ public class Game extends GameLoop { //FIXME: left side somehow clips lights too
 				selected.moveForward(diff.z);
 				break;
 			case XZ:
-				selected.moveRight(diff.x);
+				selected.moveLeft(diff.x);
 				selected.moveForward(diff.z);
 				break;
 			case XY:
-				selected.moveRight(diff.x);
+				selected.moveLeft(diff.x);
 				selected.moveUp(diff.y);
 				break;
 			case YZ:
@@ -536,9 +539,7 @@ public class Game extends GameLoop { //FIXME: left side somehow clips lights too
 				return;
 			} else {
 				synchronized (lock) {
-					if (hovering != null) {
-						hovering = null;
-					}
+					hovering = null;
 				}
 			}
 		}
@@ -548,9 +549,7 @@ public class Game extends GameLoop { //FIXME: left side somehow clips lights too
 			hovering = objects.get(0);
 		} else {
 			synchronized (lock) {
-				if (hovering != null) {
-					hovering = null;
-				}
+				hovering = null;
 			}
 		}
 	}

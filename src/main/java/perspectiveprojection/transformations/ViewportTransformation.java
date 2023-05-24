@@ -33,7 +33,7 @@ public class ViewportTransformation {
 	}
 	
 	public static Face fromClipSpaceToScreenSpace(Face face, int width, int height) {
-		Face f = new Face(face.color, face.lightMult);
+		Face f = face.copyWithoutPoints();
 		for (SimpleMatrix p : face.points) {
 			f.addPoint(fromClipSpaceToScreenSpace(p, width, height).asHomogeneousVector());
 		}

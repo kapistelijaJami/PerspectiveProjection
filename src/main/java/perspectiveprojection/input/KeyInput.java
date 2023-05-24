@@ -129,7 +129,7 @@ public class KeyInput implements MouseInputListener, MouseWheelListener, KeyList
 			game.orbit(yaw, pitch);
 		} else if (SwingUtilities.isMiddleMouseButton(e)) {
 			Camera cam = game.getCamera();
-			cam.moveRight(-diff.x);
+			cam.moveLeft(diff.x);
 			cam.moveUp(diff.y);
 			
 			mousePressed(e); //resets the click locations for this event, ready to receive the next drag event (not needed now that the mouse is still and clickLoc is not being updated)

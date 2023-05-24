@@ -138,8 +138,8 @@ public class Camera {
 	 * Positive is right, negative is left.
 	 * @param amount 
 	 */
-	public void moveRight(double amount) {
-		setLoc(getLoc().add(getLeft().mult(-amount)));
+	public void moveLeft(double amount) {
+		setLoc(getLoc().add(getLeft().mult(amount)));
 	}
 	
 	/**

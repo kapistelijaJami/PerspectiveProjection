@@ -219,6 +219,8 @@ public abstract class Projection {
 			if (count != 0) {
 				double dot = HelperFunctions.clamp(sum / count, ambientLight, 1);
 				face.lightMult = dot;
+			} else {
+				face.lightMult = 0;
 			}
 			
 			//Transform face to view space:

@@ -15,6 +15,7 @@ public class Face implements Renderable, HasListOfPoints {
 	public List<SimpleMatrix> points = new ArrayList<>(); //right hand rule, counterclockwise winding direction
 	public Color color = Color.LIGHT_GRAY;
 	public double lightMult = 1;
+	public boolean affectedByLights = true;
 	
 	public Face() {}
 	
@@ -23,20 +24,33 @@ public class Face implements Renderable, HasListOfPoints {
 	}
 	
 	public Face(Color color, Point3D... points) {
-		this.color = color;
+		this(color, 1);
 		for (Point3D p : points) {
 			this.points.add(p.asHomogeneousVector());
 		}
 	}
 	
 	public Face(SimpleMatrix... points) {
-		this.color = Color.LIGHT_GRAY;
+		this(Color.LIGHT_GRAY, 1);
 		this.points = Arrays.asList(points);
 	}
 	
 	public Face(Color color, double lightMult) {
+		this(color, lightMult, true);
+	}
+	
+	public Face(Color color, boolean affectedByLights) {
+		this(color, 1, affectedByLights);
+	}
+	
+	public Face(Color color, double lightMult, boolean affectedByLights) {
 		this.color = color;
 		this.lightMult = lightMult;
+		this.affectedByLights = affectedByLights;
+	}
+	
+	public Face copyWithoutPoints() {
+		return new Face(this.color, this.lightMult, this.affectedByLights);
 	}
 	
 	public int[] getXPoints() {
@@ -59,7 +73,10 @@ public class Face implements Renderable, HasListOfPoints {
 	
 	@Override
 	public void render(Graphics2D g) {
-		Color newColor = new Color((int) (color.getRed() * lightMult), (int) (color.getGreen() * lightMult), (int) (color.getBlue() * lightMult));
+		Color newColor = color;
+		if (affectedByLights) {
+			newColor = new Color((int) (color.getRed() * lightMult), (int) (color.getGreen() * lightMult), (int) (color.getBlue() * lightMult));
+		}
 		
 		g.setColor(newColor);
 		g.fillPolygon(getXPoints(), getYPoints(), points.size());
@@ -97,7 +114,7 @@ public class Face implements Renderable, HasListOfPoints {
 	 * @return 
 	 */
 	public Face applyMatrix(SimpleMatrix m) {
-		Face face = new Face(color, lightMult);
+		Face face = this.copyWithoutPoints();
 		
 		for (SimpleMatrix p : points) {
 			face.addPoint(m.mult(p));

@@ -187,7 +187,7 @@ public class MoveArrows extends GameObject {
 	}
 	
 	private Face getXZFace() {
-		Face XZ = new Face(Color.GREEN);
+		Face XZ = new Face(Color.GREEN, false);
 		
 		double offset = length / 6.0;
 		double unit = length / 2.6;
@@ -202,7 +202,7 @@ public class MoveArrows extends GameObject {
 	}
 	
 	private Face getXYFace() {
-		Face XY = new Face(Color.BLUE);
+		Face XY = new Face(Color.BLUE, false);
 		
 		double offset = length / 6.0;
 		double unit = length / 2.6;
@@ -217,7 +217,7 @@ public class MoveArrows extends GameObject {
 	}
 	
 	private Face getYZFace() {
-		Face YZ = new Face(Color.RED);
+		Face YZ = new Face(Color.RED, false);
 		
 		double offset = length / 6.0;
 		double unit = length / 2.6;
