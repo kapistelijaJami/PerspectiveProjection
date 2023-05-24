@@ -74,7 +74,7 @@ public class MoveArrows extends GameObject {
 	}
 	
 	private void renderXZ(Graphics2D g, Projection projection, Color background) {
-		List<Renderable> faces = projection.projectFaces(Arrays.asList(getXZFaceWorldSpace(origin)), null);
+		List<Renderable> faces = projection.projectFaces(Arrays.asList(getXZFaceWorldSpace(origin)));
 		if (!faces.isEmpty()) {
 			Renderable XZ = faces.get(0);
 			XZ.render(g);
@@ -85,7 +85,7 @@ public class MoveArrows extends GameObject {
 	}
 	
 	private void renderXY(Graphics2D g, Projection projection, Color background) {
-		List<Renderable> faces = projection.projectFaces(Arrays.asList(getXYFaceWorldSpace(origin)), null);
+		List<Renderable> faces = projection.projectFaces(Arrays.asList(getXYFaceWorldSpace(origin)));
 		if (!faces.isEmpty()) {
 			Renderable XY = faces.get(0);
 			XY.render(g);
@@ -96,7 +96,7 @@ public class MoveArrows extends GameObject {
 	}
 	
 	private void renderYZ(Graphics2D g, Projection projection, Color background) {
-		List<Renderable> faces = projection.projectFaces(Arrays.asList(getYZFaceWorldSpace(origin)), null);
+		List<Renderable> faces = projection.projectFaces(Arrays.asList(getYZFaceWorldSpace(origin)));
 		if (!faces.isEmpty()) {
 			Renderable YZ = faces.get(0);
 			YZ.render(g);

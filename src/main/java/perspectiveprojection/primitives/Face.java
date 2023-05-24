@@ -10,12 +10,16 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import org.ejml.simple.SimpleMatrix;
+import perspectiveprojection.Game;
+import static perspectiveprojection.Game.ambientLight;
+import perspectiveprojection.objects.Light;
+import perspectiveprojection.util.HelperFunctions;
 
 public class Face implements Renderable, HasListOfPoints {
 	public List<SimpleMatrix> points = new ArrayList<>(); //right hand rule, counterclockwise winding direction
 	public Color color = Color.LIGHT_GRAY;
-	public double lightMult = 1;
 	public boolean affectedByLights = true;
+	private double lightMult = 1;
 	
 	public Face() {}
 	
@@ -24,33 +28,34 @@ public class Face implements Renderable, HasListOfPoints {
 	}
 	
 	public Face(Color color, Point3D... points) {
-		this(color, 1);
+		this(color);
 		for (Point3D p : points) {
 			this.points.add(p.asHomogeneousVector());
 		}
 	}
 	
 	public Face(SimpleMatrix... points) {
-		this(Color.LIGHT_GRAY, 1);
+		this(Color.LIGHT_GRAY);
 		this.points = Arrays.asList(points);
 	}
 	
-	public Face(Color color, double lightMult) {
-		this(color, lightMult, true);
+	public Face(Color color) {
+		this(color, true);
 	}
 	
 	public Face(Color color, boolean affectedByLights) {
-		this(color, 1, affectedByLights);
-	}
-	
-	public Face(Color color, double lightMult, boolean affectedByLights) {
 		this.color = color;
-		this.lightMult = lightMult;
 		this.affectedByLights = affectedByLights;
 	}
 	
 	public Face copyWithoutPoints() {
-		return new Face(this.color, this.lightMult, this.affectedByLights);
+		Face f = new Face(this.color, this.affectedByLights);
+		f.lightMult = this.lightMult;
+		return f;
+	}
+	
+	public void setLightMultiplier(double d) {
+		lightMult = d;
 	}
 	
 	public int[] getXPoints() {
@@ -165,6 +170,34 @@ public class Face implements Renderable, HasListOfPoints {
 		for (LineSegment line : getLines()) {
 			line.renderDots = false;
 			line.render(g, color, thickness, 0, 0);
+		}
+	}
+	
+	public void calculateColorMultiplier(Light[] lights) {
+		//Calculate color multiplier from light source:
+		Point3D n = getFaceNormal();
+		Point3D loc = getAverageLocation();
+
+		double sum = 0;
+		int count = 0;
+		if (lights != null) {
+			for (Light light : lights) {
+				Point3D lightDir = light.location.subtract(loc);
+				double distance = lightDir.magnitude();
+				lightDir.normalize();
+				double dot = n.dot(lightDir);
+				if (dot > 0) {
+					sum += dot * (light.getIntensity() / Math.pow(distance, 2)) * Game.DEFAULT_LIGHT_INTENSITY;
+					count++;
+				}
+			}
+		}
+
+		if (count != 0) {
+			double dot = HelperFunctions.clamp(sum / count, ambientLight, 1);
+			setLightMultiplier(dot);
+		} else {
+			setLightMultiplier(0);
 		}
 	}
 }

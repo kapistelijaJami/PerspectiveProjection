@@ -31,7 +31,7 @@ import perspectiveprojection.transformations.projections.PerspectiveProjection;
 import uilibrary.GameLoop;
 import uilibrary.Window;
 
-public class Game extends GameLoop { //FIXME: left side somehow clips lights too early.
+public class Game extends GameLoop {
 	public static int WIDTH = 1280;
 	public static int HEIGHT = 720;
 	public static int FOV = 60; //def: 60, vertical FOV
@@ -186,8 +186,8 @@ public class Game extends GameLoop { //FIXME: left side somehow clips lights too
 		
 		renderAxis(g);
 		
-		List<Renderable> transformed = projection.projectFaces(cube.getWorldSpaceFaces(), lights);
-		transformed.addAll(projection.projectFaces(smallCube.getWorldSpaceFaces(), lights));
+		List<Renderable> transformed = projection.projectFaces(cube.getWorldSpaceFaces(lights));
+		transformed.addAll(projection.projectFaces(smallCube.getWorldSpaceFaces(lights)));
 		
 		for (Light light : lights) {
 			Point3D p = projection.project(light.location, true);

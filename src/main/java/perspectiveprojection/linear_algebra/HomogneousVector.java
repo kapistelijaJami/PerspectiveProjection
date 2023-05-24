@@ -80,42 +80,6 @@ public class HomogneousVector {
 		return "(" + x + ", " + y + ", " + z + ", " + w + ")";
 	}
 	
-	//TODO: not sure how to do the addition and subtraction etc with the w component
-	/*public HomogneousVector add(double a) {
-		return add(a, a, a);
-	}
-	
-	public HomogneousVector add(HomogneousVector o) {
-		return add(o.x, o.y, o.z);
-	}
-	
-	public HomogneousVector add(double x, double y, double z) {
-		return new HomogneousVector(this.x + x, this.y + y, this.z + z, this.w);
-	}
-
-	public HomogneousVector subtract(double a) {
-		return subtract(a, a, a);
-	}
-	
-	public HomogneousVector subtract(Point3D o) {
-		return subtract(o.x, o.y, o.z);
-	}
-	
-	public HomogneousVector subtract(double x, double y, double z) {
-		return new HomogneousVector(this.x - x, this.y - y, this.z - z, this.w);
-	}
-	
-	public HomogneousVector mult(double mult) {
-		return new HomogneousVector(this.x * mult, this.y * mult, this.z * mult, this.w);
-	}
-	
-	public HomogneousVector divide(double a) {
-		if (a == 0) {
-			return this;
-		}
-		return new HomogneousVector(this.x / a, this.y / a, this.z / a, this.w);
-	}*/
-	
 	public double get(int i) {
 		if (i == 0) {
 			return x;

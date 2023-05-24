@@ -189,39 +189,13 @@ public abstract class Projection {
 	
 	
 	/**
-	 * Transforms the faces to screen space and adjusts their color based on the light sources.
+	 * Transforms the faces to screen space.
 	 * @param faces
-	 * @param lights
 	 * @return 
 	 */
-	public List<Renderable> projectFaces(List<Face> faces, Light[] lights) {
+	public List<Renderable> projectFaces(List<Face> faces) {
 		List<Renderable> transformed = new ArrayList<>();
 		for (Face face : faces) {
-			//Calculate color multiplier from light source:
-			Point3D n = face.getFaceNormal();
-			Point3D loc = face.getAverageLocation();
-			
-			double sum = 0;
-			int count = 0;
-			if (lights != null) {
-				for (Light light : lights) {
-					Point3D lightDir = light.location.subtract(loc);
-					double distance = lightDir.magnitude();
-					lightDir.normalize();
-					double dot = n.dot(lightDir);
-					if (dot > 0) {
-						sum += dot * (light.getIntensity() / Math.pow(distance, 2)) * Game.DEFAULT_LIGHT_INTENSITY;
-						count++;
-					}
-				}
-			}
-			
-			if (count != 0) {
-				double dot = HelperFunctions.clamp(sum / count, ambientLight, 1);
-				face.lightMult = dot;
-			} else {
-				face.lightMult = 0;
-			}
 			
 			//Transform face to view space:
 			face = face.applyMatrix(cam.getViewMatrix());

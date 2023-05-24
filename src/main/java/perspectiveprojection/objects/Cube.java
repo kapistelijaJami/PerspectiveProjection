@@ -7,9 +7,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import org.ejml.simple.SimpleMatrix;
+import perspectiveprojection.Game;
+import static perspectiveprojection.Game.ambientLight;
 import perspectiveprojection.primitives.Face;
 import perspectiveprojection.primitives.LineSegment;
 import perspectiveprojection.linear_algebra.Point3D;
+import perspectiveprojection.util.HelperFunctions;
 
 public class Cube extends GameObject {
 	private SimpleMatrix modelMatrix; //Converts the object from model space to world space. Contains the information for object location, scale and rotation.
@@ -60,8 +63,7 @@ public class Cube extends GameObject {
 	}
 	
 	public void renderWireframe(Graphics2D g, Projection projection, Color color) {
-		for (Face face : getWorldSpaceFaces()) {
-			
+		for (Face face : getWorldSpaceFaces(null)) {
 			LineSegment[] lines = face.getLines();
 			for (LineSegment line : lines) {
 				Point3D start = line.getStart();
@@ -90,11 +92,19 @@ public class Cube extends GameObject {
 		return faces;
 	}
 	
-	public List<Face> getWorldSpaceFaces() {
+	/**
+	 * Gets the faces in world space and calculates the color multipliers based on lights.
+	 * @param lights
+	 * @return 
+	 */
+	public List<Face> getWorldSpaceFaces(Light[] lights) {
 		List<Face> transformed = new ArrayList<>();
 		
 		for (Face face : faces) {
-			transformed.add(face.applyMatrix(modelMatrix));
+			face = face.applyMatrix(modelMatrix);
+			face.calculateColorMultiplier(lights);
+			
+			transformed.add(face);
 		}
 		
 		return transformed;
@@ -103,7 +113,7 @@ public class Cube extends GameObject {
 	@Override
 	public List<SimpleMatrix> getListOfPoints() {
 		List<SimpleMatrix> points = new ArrayList<>();
-		for (Face face : getWorldSpaceFaces()) {
+		for (Face face : getWorldSpaceFaces(null)) {
 			points.addAll(face.getListOfPoints());
 		}
 		return points;
