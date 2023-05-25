@@ -44,6 +44,18 @@ public class Point2D {
 		this.y += y;
 		return this;
 	}
+
+	public Point2D subtract(double a) {
+		return subtract(a, a);
+	}
+	
+	public Point2D subtract(Point2D o) {
+		return subtract(o.x, o.y);
+	}
+	
+	public Point2D subtract(double x, double y) {
+		return new Point2D(this.x - x, this.y - y);
+	}
 	
 	public Point2D mult(double mult) {
 		x *= mult;

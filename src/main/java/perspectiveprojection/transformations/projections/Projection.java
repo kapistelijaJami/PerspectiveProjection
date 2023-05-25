@@ -8,13 +8,13 @@ import perspectiveprojection.camera.Camera;
 import perspectiveprojection.primitives.Face;
 import perspectiveprojection.camera.Frustum;
 import perspectiveprojection.Game;
-import static perspectiveprojection.Game.ambientLight;
 import perspectiveprojection.util.HelperFunctions;
 import perspectiveprojection.objects.Light;
 import perspectiveprojection.primitives.LineSegment;
 import perspectiveprojection.linear_algebra.Point3D;
 import perspectiveprojection.interfaces.Renderable;
 import perspectiveprojection.transformations.ViewportTransformation;
+import static perspectiveprojection.Game.AMBIENT_LIGHT;
 
 public abstract class Projection {
 	private final Camera cam;
@@ -277,7 +277,7 @@ public abstract class Projection {
 		Point3D start = project(location, false);
 		Point3D end = project(location.add(cam.getLeft()), false);
 		
-		return start.subtract(end).magnitude();
+		return start.getAs2D().subtract(end.getAs2D()).magnitude();
 	}
 	
 	public double getProjectedSize(Point3D location, double size) {

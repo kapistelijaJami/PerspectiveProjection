@@ -7,7 +7,6 @@ import perspectiveprojection.interfaces.Renderable;
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.util.List;
-import java.util.Optional;
 import org.ejml.simple.SimpleMatrix;
 import perspectiveprojection.transformations.projections.Projection;
 

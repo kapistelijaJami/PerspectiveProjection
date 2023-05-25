@@ -8,11 +8,11 @@ import java.util.List;
 import java.util.Optional;
 import org.ejml.simple.SimpleMatrix;
 import perspectiveprojection.Game;
-import static perspectiveprojection.Game.ambientLight;
 import perspectiveprojection.primitives.Face;
 import perspectiveprojection.primitives.LineSegment;
 import perspectiveprojection.linear_algebra.Point3D;
 import perspectiveprojection.util.HelperFunctions;
+import static perspectiveprojection.Game.AMBIENT_LIGHT;
 
 public class Cube extends GameObject {
 	private SimpleMatrix modelMatrix; //Converts the object from model space to world space. Contains the information for object location, scale and rotation.

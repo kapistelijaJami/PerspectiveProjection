@@ -47,9 +47,9 @@ public class Game extends GameLoop {
 	private Projection projection = new PerspectiveProjection(cam);
 	//private Projection projection = new OrthographicProjection(cam);
 	
-	private final Light[] lights = new Light[] {new Light(800, 1000, 400), new Light(-500, -300, -400)};
-	public static double ambientLight = 0.05; //from 0 to 1
-	public static double DEFAULT_LIGHT_INTENSITY = 10000;
+	private final Light[] lights = new Light[] {new Light(900, 500, 700), new Light(-500, 700, -400)};
+	public static double AMBIENT_LIGHT = 0.05; //from 0 to 1
+	public static double DEFAULT_LIGHT_INTENSITY = 6000;
 	
 	private KeyInput input;
 	

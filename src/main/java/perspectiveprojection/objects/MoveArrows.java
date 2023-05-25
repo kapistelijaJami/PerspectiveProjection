@@ -189,7 +189,7 @@ public class MoveArrows extends GameObject {
 	private Face getXZFace() {
 		Face XZ = new Face(Color.GREEN, false);
 		
-		double offset = length / 6.0;
+		double offset = length / 5.0;
 		double unit = length / 2.6;
 		Point3D offsetPoint = new Point3D(offset, -unit, offset);
 		
@@ -204,7 +204,7 @@ public class MoveArrows extends GameObject {
 	private Face getXYFace() {
 		Face XY = new Face(Color.BLUE, false);
 		
-		double offset = length / 6.0;
+		double offset = length / 5.0;
 		double unit = length / 2.6;
 		Point3D offsetPoint = new Point3D(offset, offset, -unit);
 		
@@ -219,7 +219,7 @@ public class MoveArrows extends GameObject {
 	private Face getYZFace() {
 		Face YZ = new Face(Color.RED, false);
 		
-		double offset = length / 6.0;
+		double offset = length / 5.0;
 		double unit = length / 2.6;
 		Point3D offsetPoint = new Point3D(-unit, offset, offset);
 		

@@ -1,6 +1,5 @@
 package perspectiveprojection.primitives;
 
-import perspectiveprojection.primitives.LineSegment;
 import perspectiveprojection.linear_algebra.Point3D;
 import perspectiveprojection.interfaces.HasListOfPoints;
 import perspectiveprojection.interfaces.Renderable;
@@ -11,7 +10,6 @@ import java.util.Arrays;
 import java.util.List;
 import org.ejml.simple.SimpleMatrix;
 import perspectiveprojection.Game;
-import static perspectiveprojection.Game.ambientLight;
 import perspectiveprojection.objects.Light;
 import perspectiveprojection.util.HelperFunctions;
 
@@ -80,7 +78,11 @@ public class Face implements Renderable, HasListOfPoints {
 	public void render(Graphics2D g) {
 		Color newColor = color;
 		if (affectedByLights) {
-			newColor = new Color((int) (color.getRed() * lightMult), (int) (color.getGreen() * lightMult), (int) (color.getBlue() * lightMult));
+			int red = (int) HelperFunctions.clamp(color.getRed() * lightMult, 0, 255);
+			int green = (int) HelperFunctions.clamp(color.getGreen() * lightMult, 0, 255);
+			int blue = (int) HelperFunctions.clamp(color.getBlue() * lightMult, 0, 255);
+			
+			newColor = new Color(red, green, blue);
 		}
 		
 		g.setColor(newColor);
@@ -179,7 +181,6 @@ public class Face implements Renderable, HasListOfPoints {
 		Point3D loc = getAverageLocation();
 
 		double sum = 0;
-		int count = 0;
 		if (lights != null) {
 			for (Light light : lights) {
 				Point3D lightDir = light.location.subtract(loc);
@@ -188,16 +189,12 @@ public class Face implements Renderable, HasListOfPoints {
 				double dot = n.dot(lightDir);
 				if (dot > 0) {
 					sum += dot * (light.getIntensity() / Math.pow(distance, 2)) * Game.DEFAULT_LIGHT_INTENSITY;
-					count++;
 				}
 			}
 		}
-
-		if (count != 0) {
-			double dot = HelperFunctions.clamp(sum / count, ambientLight, 1);
-			setLightMultiplier(dot);
-		} else {
-			setLightMultiplier(0);
-		}
+		
+		sum = HelperFunctions.clamp(sum, Game.AMBIENT_LIGHT, 1);
+		//sum = Math.max(sum, Game.AMBIENT_LIGHT); //If this, then have to limit the colors to 255 later. This goes more towards white, but doesn't affect the colors where components are 0, or close.
+		setLightMultiplier(sum);
 	}
 }
