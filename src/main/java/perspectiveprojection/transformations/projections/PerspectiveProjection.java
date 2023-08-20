@@ -26,13 +26,14 @@ Projection pipeline goes like this:
 	Then we have clip space, which are the points in homogeneous coordinates, not yet divided by w.
 		To get to the clip space, you apply projectionMatrix. It projects the points to the near plane/projection plane.
 		It doesn't have the finished values in x, y and z yet, they still need to be divided by w, which contains the original z value of
-		the view space, which is what creates the perspective effect.
-		Here we would do the frustum culling / clipping (if  -w < x, y, z < w then the point is valid. If it's outside the w's, then it's culled, see http://www.songho.ca/opengl/gl_projectionmatrix.html)
+		the view space, which is what creates the perspective effect. (w will be negated, and since Zeye was negative, w will be positive for points infront of the camera)
+		Values for x and y are between -Zeye and Zeye, and for z between 0 and -Zeye if they are in frustum.
+		Here we would do the frustum culling / clipping (if -w < x, y < w and 0 < z < w then the point is valid. If it's outside the w's, then it's culled, see http://www.songho.ca/opengl/gl_projectionmatrix.html)
 		The homogeneous coordinates basically have the perspective divide done already, the clip space's x, y and z are just w times bigger than in NDC. 
 		And because the w coordinate for homogeneous coordinates will always be used to divide the other coordinates anyway when tranforming it to
 		normal coordinates, it already has the perspective effect applied.
 	Then we have Normalized Device Coordinates (NDC), which is after we divide by w.
-		The values are between -1 and 1 for x and y, and 0 and 1 for z. If they are not, they are outside of the viewing frustum.
+		The values are between -1 and 1 for x and y, and between 0 and 1 for z. If they are not, they are outside of the viewing frustum.
 		But in that case they would have already been clipped in clip space.
 	The last one is screen space / window space. These are the 2D coordinates that can be rendered to screen.
 		To get to these we do viewport transformation. The NDC are scaled and translated to fit in the rendering screen.
@@ -56,12 +57,13 @@ public class PerspectiveProjection extends Projection {
 		
 		
 		//E is point in eyeSpace/viewSpace, P is projected point (the point gets projected to near plane in x and y direction)
-		//Px is projected X on near plane, Ez is point's z location in eEySpace
+		//Px is projected X on near plane, Ez is point's z location in eyeSpace
 		//Px = -n * Ex / Ez   =   n * Ex / -Ez
 		//Py = -n * Ey / Ez   =   n * Ey / -Ez
 		//Pz = -n
 		
-		//I calculated these myself, differs slightly from opengl one, because I had Zclip going from 0 to 1 instead of -1 to 1
+		//I calculated these myself, differs slightly from opengl one, because I had Zndc (z value after perspective divide) going from 0 to 1 instead of -1 to 1 (it's 0 when Ze is on near plane, and 1 when Ze is on far plane)
+		//Calculations are in an image in root and can be played with in here: https://www.desmos.com/calculator/cdovxinziz
 		double A = f / (n - f);
 		double B = n * A; //was B = n * f / (n - f)
 		

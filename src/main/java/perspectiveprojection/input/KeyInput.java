@@ -25,7 +25,7 @@ public class KeyInput implements MouseInputListener, MouseWheelListener, KeyList
 	private Point clickLoc; //where was the click location of the mouse relative to the screen
 	
 	private boolean dragging = false;
-	private boolean moving = false;
+	private boolean movingObject = false;
 	private MoveDirection movingDirection;
 	private Point3D currentMoveLocation;
 	private Robot robot;
@@ -64,7 +64,7 @@ public class KeyInput implements MouseInputListener, MouseWheelListener, KeyList
 			game.click(e.getX(), e.getY(), renderRay);
 		}
 		dragging = false;
-		moving = false;
+		movingObject = false;
 		game.getCanvas().setCursor(Cursor.getDefaultCursor());
 		
 		mouseMoved(e);
@@ -84,7 +84,7 @@ public class KeyInput implements MouseInputListener, MouseWheelListener, KeyList
 	public void mouseDragged(MouseEvent e) {
 		//Point p = MouseInfo.getPointerInfo().getLocation(); //if we were to reset mouse location somewhere other than where it was clicked, this is needed, since e could have old information.
 		
-		if (moving) {
+		if (movingObject) {
 			if (SwingUtilities.isLeftMouseButton(e)) {
 				Point3D newMoveLocation = game.projectToMoveDirection(e.getX(), e.getY(), movingDirection, currentMoveLocation);
 				Point3D diff = new Point3D(newMoveLocation.x - currentMoveLocation.x, newMoveLocation.y - currentMoveLocation.y, newMoveLocation.z - currentMoveLocation.z);
@@ -244,7 +244,7 @@ public class KeyInput implements MouseInputListener, MouseWheelListener, KeyList
 	}
 	
 	public void startToMoveObject(MoveDirection movingDirection) {
-		moving = true;
+		movingObject = true;
 		this.movingDirection = movingDirection;
 	}
 	

@@ -115,6 +115,9 @@ public class Camera {
 	 */
 	public void moveForward(double amount) {
 		setLoc(getLoc().add(getForward().mult(amount)));
+		if (orbitPointDistance != -1) {
+			orbitPointDistance -= amount;
+		}
 	}
 	
 	/**

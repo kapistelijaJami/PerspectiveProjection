@@ -7,12 +7,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import org.ejml.simple.SimpleMatrix;
-import perspectiveprojection.Game;
 import perspectiveprojection.primitives.Face;
 import perspectiveprojection.primitives.LineSegment;
 import perspectiveprojection.linear_algebra.Point3D;
-import perspectiveprojection.util.HelperFunctions;
-import static perspectiveprojection.Game.AMBIENT_LIGHT;
 
 public class Cube extends GameObject {
 	private SimpleMatrix modelMatrix; //Converts the object from model space to world space. Contains the information for object location, scale and rotation.
@@ -56,6 +53,10 @@ public class Cube extends GameObject {
 	
 	public void scale(double scalar) {
 		modelMatrix = modelMatrix.mult(SimpleMatrix.diag(scalar, scalar, scalar, 1));
+	}
+	
+	public void scale(double x, double y, double z) {
+		modelMatrix = modelMatrix.mult(SimpleMatrix.diag(x, y, z, 1));
 	}
 	
 	public void renderWireframe(Graphics2D g, Projection projection) {

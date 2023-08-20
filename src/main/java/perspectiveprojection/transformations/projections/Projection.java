@@ -126,9 +126,9 @@ public abstract class Projection {
 		
 		//LEFT
 		SimpleMatrix pointOnLeftPlane = new Point3D(-1, 0, 0).asHomogeneousVector();
-		if (a.get(0) < -a.get(3)) {
+		if (a.get(0) < -a.get(3)) { //a is outside left plane and will be moved to the plane (this is: x < -w, where w itself will be positive)
 			a = HelperFunctions.intersectionPointWithPlane(pointOnLeftPlane, frustum.left, a, b);
-		} else if (b.get(0) < -b.get(3)) {
+		} else if (b.get(0) < -b.get(3)) { //b is outside left plane and will be moved to the plane
 			b = HelperFunctions.intersectionPointWithPlane(pointOnLeftPlane, frustum.left, a, b);
 		}
 		
@@ -136,7 +136,7 @@ public abstract class Projection {
 		
 		//RIGHT
 		SimpleMatrix pointOnRightPlane = new Point3D(1, 0, 0).asHomogeneousVector();
-		if (a.get(0) > a.get(3)) {
+		if (a.get(0) > a.get(3)) { //a is outside right plane and will be moved to the plane (this is: x > w)
 			a = HelperFunctions.intersectionPointWithPlane(pointOnRightPlane, frustum.right, a, b);
 		} else if (b.get(0) > b.get(3)) {
 			b = HelperFunctions.intersectionPointWithPlane(pointOnRightPlane, frustum.right, a, b);
@@ -189,7 +189,7 @@ public abstract class Projection {
 	
 	
 	/**
-	 * Transforms the faces to screen space.
+	 * Transforms the faces from world space to screen space.
 	 * @param faces
 	 * @return 
 	 */

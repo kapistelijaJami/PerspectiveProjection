@@ -37,9 +37,7 @@ public class Game extends GameLoop {
 	public static int FOV = 60; //def: 60, vertical FOV
 	public static int DEFAULT_RAY_LENGTH = 10000;
 	
-	//perspective good location when translate first, then rotate: loc (586.0, 691.0, 1202.0) yaw -26.0 pitch -153.0
-	//private Camera cam = new Camera(new Point3D(500, 700, 800)); //(new Point3D(-400, 300, 500), -25, 28) works with ortographic (origo might be behind camera). Should be able to work with others with these settings as well
-	private final Camera cam = new Camera(new Point3D(400, 500, 800)); //def: (, 800)
+	private final Camera cam = new Camera(new Point3D(400, 500, 800)); //def: (400, 500, 800)
 	private final Cube cube = new Cube(100, true);
 	private final Cube smallCube = new Cube(70, false);
 	
@@ -96,17 +94,17 @@ public class Game extends GameLoop {
 	private Point3D getOrbitPoint() {
 		Point3D p = null;
 		if (selected != null) {
-			if (selected instanceof HasBoundingBox) {
-				p = ((HasBoundingBox) selected).getBoundingBox().getMiddle();
-				cam.orbitPointDistance = p.distanceFrom(cam.getLoc());
-			}
+			p = selected.getBoundingBox().getMiddle();
+			cam.orbitPointDistance = p.distanceFrom(cam.getLoc());
 		}
+		
 		if (p == null) {
 			if (cam.orbitPointDistance == -1) {
 				cam.orbitPointDistance = cam.getLoc().distanceFrom(new Point3D());
 			}
 			p = cam.getLoc().add(cam.getForward().mult(cam.orbitPointDistance));
 		}
+		
 		return p;
 	}
 	
