@@ -273,10 +273,15 @@ public class HelperFunctions {
 		return distanceToLine(p, start, dir);
 	}
 	
-	public static double distanceToLine(Point3D p, Point3D pointOnLine, Point3D dir) { //infinite line, goes through pointOnLine
+	public static Point3D closestPointOnLine(Point3D p, Point3D pointOnLine, Point3D dir) { //Returns a point on the line that is closest to the given point p
 		dir.normalize();
 		double t = p.subtract(pointOnLine).dot(dir);
 		Point3D projection = pointOnLine.add(dir.mult(t));
+		return projection;
+	}
+	
+	public static double distanceToLine(Point3D p, Point3D pointOnLine, Point3D dir) { //infinite line, goes through pointOnLine
+		Point3D projection = closestPointOnLine(p, pointOnLine, dir);
 		
 		return projection.subtract(p).magnitude();
 	}

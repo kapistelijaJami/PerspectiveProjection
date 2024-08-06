@@ -53,7 +53,7 @@ public class KeyInput implements MouseInputListener, MouseWheelListener, KeyList
 		clickLoc = e.getLocationOnScreen();
 		
 		if (SwingUtilities.isLeftMouseButton(e) && game.clickMoveSelected(e.getX(), e.getY(), this)) {
-			currentMoveLocation = game.projectToMoveDirection(e.getX(), e.getY(), movingDirection, null);
+			currentMoveLocation = game.projectToMoveDirection(e.getX(), e.getY(), movingDirection);
 		}
 	}
 	
@@ -86,7 +86,7 @@ public class KeyInput implements MouseInputListener, MouseWheelListener, KeyList
 		
 		if (movingObject) {
 			if (SwingUtilities.isLeftMouseButton(e)) {
-				Point3D newMoveLocation = game.projectToMoveDirection(e.getX(), e.getY(), movingDirection, currentMoveLocation);
+				Point3D newMoveLocation = game.projectToMoveDirection(e.getX(), e.getY(), movingDirection);
 				Point3D diff = new Point3D(newMoveLocation.x - currentMoveLocation.x, newMoveLocation.y - currentMoveLocation.y, newMoveLocation.z - currentMoveLocation.z);
 
 				handleMoveObject(diff);

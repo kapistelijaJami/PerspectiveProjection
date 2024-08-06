@@ -204,7 +204,8 @@ public class Game extends GameLoop {
 			obj.render(g);
 		}
 		
-		for (Ray ray : rays) {
+		for (int i = 0; i < rays.size(); i++) { //to prevent concurrent modification exception
+			Ray ray = rays.get(i);
 			ray.render(g, projection);
 		}
 		
@@ -441,51 +442,56 @@ public class Game extends GameLoop {
 		return null;
 	}
 	
-	public Point3D projectToMoveDirection(int x, int y, MoveDirection movingDirection, Point3D oldPoint) { //TODO: still is not perfect, the box doesn't follow the mouse exactly. Even with plane movement, where it should follow perfectly.
+	//TODO: Fixed the double movement directions (plane movement). But the line movement is not perfect, the box doesn't follow the mouse exactly, but it's pretty good now.
+	public Point3D projectToMoveDirection(int x, int y, MoveDirection movingDirection) {
 		if (selected == null) {
 			return new Point3D(x, y, 0);
 		}
 		
 		Point3D mid = selected.getBoundingBox().getMiddle();
-		if (oldPoint == null) {
-			oldPoint = mid;
-		}
 		
 		Ray ray = createRay(x, y);
 		Point3D projected = new Point3D(x, y, 0);
 		
 		switch (movingDirection) {
 			case X:
-				//With one direction only, you can choose the plane. Let's calculate one that is towards the camera, but perpendicular to the X axis
+				//With one direction only, you can choose the plane. Let's calculate one that is towards the camera, but normal is perpendicular to the X axis
 				//mid.subtract(cam.getLoc()) I thought about using this instead of forward vector, since it's more accurate towards cam, but when the object moves, the plane moves too.
-				Point3D normal = Point3D.getX().cross(cam.getForward()).normalize();
-				normal = Point3D.getX().cross(normal);
+				Point3D normal = cam.getLoc().copy();
+				normal.x = 0;
+				normal.normalize();
 				projected = HelperFunctions.intersectionPointWithPlaneInfinite(mid, normal, ray.getStart(), ray.getDir());
 				break;
 			case Y:
-				//With one direction only, you can choose the plane. Let's calculate one that is towards the camera, but perpendicular to the Y axis
-				normal = Point3D.getY().cross(cam.getForward()).normalize();
-				normal = Point3D.getY().cross(normal);
+				//With one direction only, you can choose the plane. Let's calculate one that is towards the camera, but normal is perpendicular to the Y axis
+				normal = cam.getLoc().copy();
+				normal.y = 0;
+				normal.normalize();
 				projected = HelperFunctions.intersectionPointWithPlaneInfinite(mid, normal, ray.getStart(), ray.getDir());
 				break;
 			case Z:
-				//With one direction only, you can choose the plane. Let's calculate one that is towards the camera, but perpendicular to the Z axis
-				normal = Point3D.getZ().cross(cam.getForward()).normalize();
-				normal = Point3D.getZ().cross(normal);
+				//With one direction only, you can choose the plane. Let's calculate one that is towards the camera, but normal is perpendicular to the Z axis
+				normal = cam.getLoc().copy();
+				normal.z = 0;
+				normal.normalize();
 				projected = HelperFunctions.intersectionPointWithPlaneInfinite(mid, normal, ray.getStart(), ray.getDir());
 				break;
 			case XZ:
-				projected = HelperFunctions.intersectionPointWithPlaneInfinite(mid, Point3D.getY(), ray.getStart(), ray.getDir());
+				//projected = HelperFunctions.intersectionPointWithPlaneInfinite(mid, Point3D.getY(), ray.getStart(), ray.getDir());
+				Point3D p = selected.moveArrows.getXZFaceBoundingBox(mid).getMiddle();
+				projected = HelperFunctions.intersectionPointWithPlaneInfinite(p, Point3D.getY(), ray.getStart(), ray.getDir());
 				break;
 			case XY:
-				projected = HelperFunctions.intersectionPointWithPlaneInfinite(mid, Point3D.getZ(), ray.getStart(), ray.getDir());
+				p = selected.moveArrows.getXYFaceBoundingBox(mid).getMiddle();
+				projected = HelperFunctions.intersectionPointWithPlaneInfinite(p, Point3D.getZ(), ray.getStart(), ray.getDir());
 				break;
 			case YZ:
-				projected = HelperFunctions.intersectionPointWithPlaneInfinite(mid, Point3D.getX(), ray.getStart(), ray.getDir());
+				p = selected.moveArrows.getYZFaceBoundingBox(mid).getMiddle();
+				projected = HelperFunctions.intersectionPointWithPlaneInfinite(p, Point3D.getX(), ray.getStart(), ray.getDir());
 				break;
 			case ALL:
 				//Here we take from camera orientation
-				projected = HelperFunctions.intersectionPointWithPlaneInfinite(oldPoint, cam.getForward().negated(), ray.getStart(), ray.getDir());
+				projected = HelperFunctions.intersectionPointWithPlaneInfinite(mid, cam.getForward().negated(), ray.getStart(), ray.getDir());
 				break;
 		}
 		

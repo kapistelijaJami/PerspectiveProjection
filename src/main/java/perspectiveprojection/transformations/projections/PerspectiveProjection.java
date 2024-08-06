@@ -31,7 +31,7 @@ Projection pipeline goes like this:
 		Here we would do the frustum culling / clipping (if -w < {x,y} < w and 0 < z < w then the point is valid. If it's outside the w's, then it's culled, see http://www.songho.ca/opengl/gl_projectionmatrix.html )
 		The homogeneous coordinates basically have the perspective divide done already, the clip space's x, y and z are just w times bigger than in NDC. 
 		And because the w coordinate for homogeneous coordinates will always be used to divide the other coordinates anyway when tranforming it to
-		normal coordinates, it already has the perspective effect applied.
+		normalized coordinates, it already has the perspective effect applied.
 	Then we have Normalized Device Coordinates (NDC), which is after we divide by w.
 		The values are between -1 and 1 for x and y, and between 0 and 1 for z. If they are not, they are outside of the viewing frustum.
 		But in that case they would have already been clipped in clip space.

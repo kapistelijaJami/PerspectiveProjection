@@ -287,14 +287,14 @@ public class MoveArrows extends GameObject {
 	
 	@Override
 	public Point3D getLocation() {
-		return new Point3D();
+		return origin;
 	}
-
+	
 	@Override
 	public List<SimpleMatrix> getListOfPoints() {
 		return new ArrayList<>();
 	}
-
+	
 	@Override
 	public void renderSelected(Graphics2D g, Projection projection) {
 		
