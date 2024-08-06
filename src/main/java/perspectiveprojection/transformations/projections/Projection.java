@@ -119,7 +119,7 @@ public abstract class Projection {
 			return new SimpleMatrix[] {a, b};
 		}
 		
-		//this breaks it: //TODO: find out why
+		//TODO: this breaks it, find out why:
 		/*a = Point3D.fromMatrixDivideByW(a).asHomogeneousVector();
 		b = Point3D.fromMatrixDivideByW(b).asHomogeneousVector();*/
 		

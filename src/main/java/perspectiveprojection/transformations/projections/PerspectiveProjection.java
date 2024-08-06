@@ -22,13 +22,13 @@ Projection pipeline goes like this:
 	Then we have view space AKA eye space or camera space, which are the points relative to the camera location. This is the POV of the camera.
 		To get to the view space, you apply viewMatrix. It just moves all the points so that camera is at the origo, and
 		rotates all the points around the camera so that the viewing direction is how the camera would see it.
-		Camera looks towards the negative Z direction. So points infront of the camera will have negative z values.
+		Camera looks towards the negative Z direction. So points in front of the camera will have negative z values.
 	Then we have clip space, which are the points in homogeneous coordinates, not yet divided by w.
 		To get to the clip space, you apply projectionMatrix. It projects the points to the near plane/projection plane.
 		It doesn't have the finished values in x, y and z yet, they still need to be divided by w, which contains the original z value of
 		the view space, which is what creates the perspective effect. (w will be negated, and since Zeye was negative, w will be positive for points infront of the camera)
 		Values for x and y are between -Zeye and Zeye, and for z between 0 and -Zeye if they are in frustum.
-		Here we would do the frustum culling / clipping (if -w < x, y < w and 0 < z < w then the point is valid. If it's outside the w's, then it's culled, see http://www.songho.ca/opengl/gl_projectionmatrix.html)
+		Here we would do the frustum culling / clipping (if -w < {x,y} < w and 0 < z < w then the point is valid. If it's outside the w's, then it's culled, see http://www.songho.ca/opengl/gl_projectionmatrix.html )
 		The homogeneous coordinates basically have the perspective divide done already, the clip space's x, y and z are just w times bigger than in NDC. 
 		And because the w coordinate for homogeneous coordinates will always be used to divide the other coordinates anyway when tranforming it to
 		normal coordinates, it already has the perspective effect applied.

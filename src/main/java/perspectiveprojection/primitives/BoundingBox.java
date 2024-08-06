@@ -186,7 +186,7 @@ public class BoundingBox {
 		
 		return box;
 	}
-
+	
 	public final Point3D getMiddle() {
 		Point3D p = new Point3D();
 		p.x = (minPoint.x + maxPoint.x) / 2.0;

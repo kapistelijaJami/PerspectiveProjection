@@ -1,5 +1,5 @@
 When doing the view matrix, the first row 3 elements will be either camera left or camera right depending whether you want the transformed points to end up to the positive Z or negative Z. 
-The choice also depends on which way you interpret the forward vector. If the forward is the direction your camera views (which makes most sense), then you have to negate it for the matrix if you want to the points to end up to negative Z. Otherwise you don't have to negate it. You can always swap the left and right by negating as well.
+The choice also depends on which way you interpret the forward vector. If the forward is the direction your camera views (which makes most sense), then you have to negate it for the matrix if you want the points to end up to negative Z. Otherwise you don't have to negate it. You can always swap the left and right by negating as well.
 
 So, you don't have to negate anything if your vectors will match the unit vectors when the viewMatrix is applied and the camera pov is oriented to the origin. This is when the camera looks at positive Z and you use left vector (because the X axis is on the left of Z when looking to positive Z). If you want the camera to look at negative Z, you have to negate forward, but also left, because the positive X is then to the right of the camera (and the view would be flipped around the XZ plane).
 

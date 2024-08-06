@@ -32,7 +32,7 @@ import uilibrary.GameLoop;
 import uilibrary.Window;
 
 public class Game extends GameLoop {
-	public static int WIDTH = 1280;
+	public static int WIDTH = 1280; //This will be the canvas size.
 	public static int HEIGHT = 720;
 	public static int FOV = 60; //def: 60, vertical FOV
 	public static int DEFAULT_RAY_LENGTH = 10000;

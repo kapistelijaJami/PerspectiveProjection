@@ -38,7 +38,7 @@ public class KeyInput implements MouseInputListener, MouseWheelListener, KeyList
 		try {
 			robot = new Robot();
 		} catch (AWTException ex) {
-			ex.printStackTrace();
+			ex.printStackTrace(System.err);
 		}
 	}
 	
@@ -159,8 +159,8 @@ public class KeyInput implements MouseInputListener, MouseWheelListener, KeyList
 	 */
 	private boolean checkMouseButtonMask(MouseEvent e, int onMask, int offMask) {
 		return (e.getModifiersEx() & (onMask | offMask)) == onMask; //When modifiers are masked with & to both onMask and offMask the result has to be same as onMask.
-		//If onMask has 1s where modifier doesn't, result won't equal onMask and it's false.
-		//If offMask has 1s where onMask doesn't, but the modifier does, then result won't equal onMask, and it's false.
+		//If onMask has 1's where modifier doesn't, result won't equal onMask and it's false.
+		//If offMask has 1's where onMask doesn't, but the modifier does, then result won't equal onMask, and it's false.
 	}
 	
 	@Override

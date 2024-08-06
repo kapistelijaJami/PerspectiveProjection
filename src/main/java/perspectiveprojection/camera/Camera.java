@@ -91,7 +91,7 @@ public class Camera {
 	 * the last column will be affected by the rotation information.
 	 */
 	private void updateMatrix() {
-		//The top left 3x3 submatrix won't change when location changes, but for the last column,
+		//The top left 3x3 submatrix won't change when location changes, but for the last column
 		//we need to also apply the rotation, because it happens after the translation.
 		//We can do so by just calculating the last column manually with dot product.
 		//Also if the rotation changes, we still have to calculate the last column even though location didn't change.
@@ -239,7 +239,6 @@ public class Camera {
 	/**
 	 * Calculates the current yaw.
 	 * Positive is to the right, negative to the left.
-	 * 
 	 * @return 
 	 */
 	public double getYaw() {
