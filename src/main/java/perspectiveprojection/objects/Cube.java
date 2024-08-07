@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import org.ejml.simple.SimpleMatrix;
+import perspectiveprojection.enums.BoundingBoxType;
 import perspectiveprojection.interfaces.Rotateable;
 import perspectiveprojection.interfaces.Scaleable;
 import perspectiveprojection.primitives.Face;
@@ -14,13 +15,12 @@ import perspectiveprojection.primitives.LineSegment;
 import perspectiveprojection.linear_algebra.Point3D;
 
 public class Cube extends GameObject implements Rotateable, Scaleable {
-	private SimpleMatrix modelMatrix; //Converts the object from model space to world space. Contains the information for object location, scale and rotation.
-	
 	private final List<Face> faces = new ArrayList<>();
 	public boolean renderDots = false;
+	public boolean renderBoundingBox = false;
 	
 	public Cube(double cubeSize, boolean multipleColors) { //If cubeSize is 100, then the cube is 100x100x100, it will be -50 to 50 around origo if no other transformations are added.
-		modelMatrix = SimpleMatrix.diag(cubeSize / 2, cubeSize / 2, cubeSize / 2, 1);
+		super(cubeSize / 2);
 		
 		faces.add(new Face(new Point3D(-1,  1,  1), new Point3D(-1, -1,  1), new Point3D( 1, -1,  1), new Point3D( 1,  1,  1))); //front
 		faces.add(new Face(new Point3D( 1,  1,  1), new Point3D( 1, -1,  1), new Point3D( 1, -1, -1), new Point3D( 1,  1, -1))); //right
@@ -37,16 +37,6 @@ public class Cube extends GameObject implements Rotateable, Scaleable {
 			faces.get(4).color = Color.CYAN;
 			faces.get(5).color = Color.GREEN;
 		}
-	}
-	
-	@Override
-	public Point3D getLocation() {
-		return Point3D.fromMatrix(modelMatrix.extractVector(false, 3));
-	}
-	
-	@Override
-	public void setLocation(Point3D loc) {
-		modelMatrix.setColumn(3, 0, loc.x, loc.y, loc.z);
 	}
 	
 	public void renderWireframe(Graphics2D g, Projection projection) {
@@ -76,6 +66,10 @@ public class Cube extends GameObject implements Rotateable, Scaleable {
 				line.renderDots = renderDots;
 				line.render(g, color, sRadius, eRadius);
 			}
+		}
+		
+		if (renderBoundingBox) {
+			getBoundingBox().render(g, projection, Color.BLACK);
 		}
 	}
 	
@@ -119,14 +113,9 @@ public class Cube extends GameObject implements Rotateable, Scaleable {
 	public void renderHover(Graphics2D g, Projection projection) {
 		renderWireframe(g, projection, Color.yellow);
 	}
-	
+
 	@Override
-	public SimpleMatrix getModelMatrix() {
-		return modelMatrix;
-	}
-	
-	@Override
-	public void setModelMatrix(SimpleMatrix modelMatrix) {
-		this.modelMatrix = modelMatrix;
+	public BoundingBoxType getBoundingBoxType() {
+		return BoundingBoxType.AXIS_ALIGNED_BOX;
 	}
 }

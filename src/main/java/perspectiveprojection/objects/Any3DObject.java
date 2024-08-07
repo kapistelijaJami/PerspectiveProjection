@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Optional;
 import org.ejml.simple.SimpleMatrix;
 import perspectiveprojection.OBJFileReader;
+import perspectiveprojection.enums.BoundingBoxType;
 import perspectiveprojection.interfaces.Rotateable;
 import perspectiveprojection.interfaces.Scaleable;
 import perspectiveprojection.linear_algebra.Point3D;
@@ -16,13 +17,12 @@ import perspectiveprojection.primitives.LineSegment;
 import perspectiveprojection.transformations.projections.Projection;
 
 public class Any3DObject extends GameObject implements Rotateable, Scaleable {
-	private SimpleMatrix modelMatrix; //Converts the object from model space to world space. Contains the information for object location, scale and rotation.
-	
 	private List<Face> faces = new ArrayList<>();
 	public boolean renderDots = false;
+	public boolean renderBoundingBox = true;
 	
 	public Any3DObject(List<Face> faces, double size) { //Default size = 1
-		modelMatrix = SimpleMatrix.diag(size, size, size, 1);
+		super(size);
 		this.faces = faces;
 	}
 	
@@ -33,16 +33,6 @@ public class Any3DObject extends GameObject implements Rotateable, Scaleable {
 	
 	public static Any3DObject createFromFile(File file, double size) {
 		return OBJFileReader.readOBJ(file, size);
-	}
-	
-	@Override
-	public Point3D getLocation() {
-		return Point3D.fromMatrix(modelMatrix.extractVector(false, 3));
-	}
-	
-	@Override
-	public void setLocation(Point3D loc) {
-		modelMatrix.setColumn(3, 0, loc.x, loc.y, loc.z);
 	}
 	
 	@Override
@@ -104,6 +94,10 @@ public class Any3DObject extends GameObject implements Rotateable, Scaleable {
 				line.render(g, color, sRadius, eRadius);
 			}
 		}
+		
+		if (renderBoundingBox) {
+			getBoundingBox().render(g, projection, Color.BLACK);
+		}
 	}
 	
 	@Override
@@ -115,14 +109,9 @@ public class Any3DObject extends GameObject implements Rotateable, Scaleable {
 	public void renderHover(Graphics2D g, Projection projection) {
 		renderWireframe(g, projection, Color.yellow);
 	}
-	
+
 	@Override
-	public SimpleMatrix getModelMatrix() {
-		return modelMatrix;
-	}
-	
-	@Override
-	public void setModelMatrix(SimpleMatrix modelMatrix) {
-		this.modelMatrix = modelMatrix;
+	public BoundingBoxType getBoundingBoxType() {
+		return BoundingBoxType.AXIS_ALIGNED_BOX;
 	}
 }

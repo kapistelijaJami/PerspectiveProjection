@@ -312,4 +312,9 @@ public class MoveArrows extends GameObject {
 	public void renderHover(Graphics2D g, Projection projection) {
 		renderCurrentHover(g, projection);
 	}
+
+	@Override
+	public BoundingBoxType getBoundingBoxType() {
+		return BoundingBoxType.AXIS_ALIGNED_BOX;
+	}
 }

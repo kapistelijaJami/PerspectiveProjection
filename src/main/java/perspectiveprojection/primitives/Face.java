@@ -184,7 +184,7 @@ public class Face implements Renderable, HasListOfPoints {
 		double sum = 0;
 		if (lights != null) {
 			for (Light light : lights) {
-				Point3D lightDir = light.location.subtract(loc);
+				Point3D lightDir = light.getLocation().subtract(loc);
 				double distance = lightDir.magnitude();
 				lightDir.normalize();
 				double dot = n.dot(lightDir);

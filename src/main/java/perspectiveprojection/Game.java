@@ -202,12 +202,12 @@ public class Game extends GameLoop {
 		transformed.addAll(projection.projectFaces(obj.getWorldSpaceFaces(lights)));
 		
 		for (Light light : lights) {
-			Point3D p = projection.project(light.location, true);
+			Point3D p = projection.project(light.getLocation(), true);
 			if (p == null) {
 				continue;
 			}
 			
-			double size = projection.getProjectedSize(light.location, light.size);
+			double size = projection.getProjectedSize(light.getLocation(), light.getSize());
 			
 			transformed.add(new Light(p, size));
 		}

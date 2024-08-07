@@ -55,7 +55,6 @@ public class OBJFileReader {
 						continue; //TODO: not sure if needed
 					default: //Other stuff
 						System.out.println(s);
-						continue;
 				}
 			}
 			
