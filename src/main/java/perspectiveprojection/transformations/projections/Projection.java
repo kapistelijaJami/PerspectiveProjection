@@ -208,7 +208,7 @@ public abstract class Projection {
 			face = face.applyMatrix(projectionMatrix);
 			//Frustum culling (all points outside) (TODO: plane can still be visible even if all points are out):
 			boolean allOutside = true;
-			for (SimpleMatrix p : face.points) {
+			for (SimpleMatrix p : face.getPoints()) {
 				if (pointInside(p)) {
 					allOutside = false;
 				}

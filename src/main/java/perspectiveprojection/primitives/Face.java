@@ -14,7 +14,7 @@ import perspectiveprojection.objects.Light;
 import perspectiveprojection.util.HelperFunctions;
 
 public class Face implements Renderable, HasListOfPoints {
-	public List<SimpleMatrix> points = new ArrayList<>(); //right hand rule, counterclockwise winding direction
+	private List<SimpleMatrix> points = new ArrayList<>(); //right hand rule, counterclockwise winding direction
 	public Color color = Color.LIGHT_GRAY;
 	public boolean affectedByLights = true;
 	private double lightMult = 1;
@@ -54,6 +54,10 @@ public class Face implements Renderable, HasListOfPoints {
 	
 	public void setLightMultiplier(double d) {
 		lightMult = d;
+	}
+	
+	public List<SimpleMatrix> getPoints() {
+		return points;
 	}
 	
 	public int[] getXPoints() {

@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import perspectiveprojection.objects.Any3DObject;
 import perspectiveprojection.transformations.projections.OrthographicProjection;
 import perspectiveprojection.transformations.projections.PerspectiveProjection;
 import uilibrary.GameLoop;
@@ -40,6 +41,7 @@ public class Game extends GameLoop {
 	private final Camera cam = new Camera(new Point3D(400, 500, 800)); //def: (400, 500, 800)
 	private final Cube cube = new Cube(100, true);
 	private final Cube smallCube = new Cube(70, false);
+	private Any3DObject obj;
 	
 	private final Window window;
 	private Projection projection = new PerspectiveProjection(cam);
@@ -62,6 +64,8 @@ public class Game extends GameLoop {
 	
 	private final List<Ray> rays = new ArrayList<>();
 	
+	private boolean initReady = false;
+	
 	public Game(int fps) {
 		super(fps);
 		window = new Window(WIDTH, HEIGHT, "Perspective projection");
@@ -82,8 +86,17 @@ public class Game extends GameLoop {
 		cube.setLocation(new Point3D(50, 50, 50));
 		smallCube.setLocation(new Point3D(500, 0, 0));
 		
+		/*obj = Any3DObject.createFromFile("D:\\Tiedostot\\3D Printing stuff\\Indian.obj", 1);
+		obj.rotate(HelperFunctions.getRotationMatrixAroundY4By4(90));
+		obj.rotate(HelperFunctions.getRotationMatrixAroundX4By4(-90));*/
+		obj = Any3DObject.createFromFile("D:\\Tiedostot\\3D Printing stuff\\Extended wheel.obj", 10);
+		obj.rotate(HelperFunctions.getRotationMatrixAroundY4By4(180));
+		obj.setLocation(new Point3D(0, 0, 500));
+		
 		/*cube.rotate(HelperFunctions.getRotationMatrixAroundY4By4(45));
 		cube.rotate(HelperFunctions.getRotationMatrixAroundX4By4(20));*/
+		
+		initReady = true;
 	}
 	
 	@Override
@@ -186,6 +199,7 @@ public class Game extends GameLoop {
 		
 		List<Renderable> transformed = projection.projectFaces(cube.getWorldSpaceFaces(lights));
 		transformed.addAll(projection.projectFaces(smallCube.getWorldSpaceFaces(lights)));
+		transformed.addAll(projection.projectFaces(obj.getWorldSpaceFaces(lights)));
 		
 		for (Light light : lights) {
 			Point3D p = projection.project(light.location, true);
@@ -291,14 +305,18 @@ public class Game extends GameLoop {
 	
 	//Performs raycasting to select objects.
 	public void click(int x, int y, boolean renderRay) {
+		if (!initReady) {
+			return;
+		}
+		
 		Ray ray = createRay(x, y);
 		if (renderRay) {
 			rays.add(ray);
 		}
 		
-		List<GameObject> objects = intersects(ray);
+		List<GameObjectAndDistance> objects = intersects(ray);
 		if (!objects.isEmpty()) {
-			selected = objects.get(0);
+			selected = objects.get(0).gameObject;
 			if (selected.moveArrows == null) {
 				Point3D mid = selected.getBoundingBox().getMiddle();
 				selected.moveArrows = new MoveArrows(mid);
@@ -323,24 +341,26 @@ public class Game extends GameLoop {
 		return new Ray(new LineSegment(start, start.add(dir.mult(length))));
 	}
 	
-	public List<GameObject> intersects(Point3D start, Point3D dir, double rayLength) {
+	public List<GameObjectAndDistance> intersects(Point3D start, Point3D dir, double rayLength) {
 		return intersects(new Ray(start, dir, rayLength));
 	}
 	
-	public List<GameObject> intersects(Ray ray) {
-		List<GameObject> list = new ArrayList<>();
+	public List<GameObjectAndDistance> intersects(Ray ray) {
+		List<GameObjectAndDistance> list = new ArrayList<>();
 		
 		List<HasBoundingBox> objects = getObjectsAsBoundingBoxes();
 		for (HasBoundingBox object : objects) {
 			BoundingBox bounds = object.getBoundingBox();
-			if (bounds.lineIntersection(ray.getStart(), ray.getEnd())) { //TODO: get t value and keep track of closest and return them all in an ordered list
+			BooleanAndDistance boolAndT = bounds.lineIntersection(ray.getStart(), ray.getEnd());
+			if (boolAndT.bool) {				//TODO: get t value and keep track of closest and return them all in an ordered list
 				if (object instanceof GameObject) {
 					GameObject obj = (GameObject) object;
-					list.add(obj);
-					return list;
+					list.add(new GameObjectAndDistance(obj, boolAndT.t));
 				}
 			}
 		}
+		
+		list.sort(null);
 		
 		return list;
 	}
@@ -350,6 +370,7 @@ public class Game extends GameLoop {
 		
 		objects.add(cube);
 		objects.add(smallCube);
+		objects.add(obj);
 		objects.addAll(Arrays.asList(lights));
 		
 		return objects;
@@ -404,38 +425,38 @@ public class Game extends GameLoop {
 		Point3D mid = object.getBoundingBox().getMiddle();
 		
 		BoundingBox boxALL = object.moveArrows.getALLBoundingBox(mid);
-		if (boxALL.lineIntersection(ray.getStart(), ray.getDir(), ray.getLength())) {
+		if (boxALL.lineIntersection(ray.getStart(), ray.getDir(), ray.getLength()).bool) {
 			return MoveDirection.ALL;
 		}
 		
 		BoundingBox boxX = object.moveArrows.getXBoundingBox(mid);
-		if (boxX.lineIntersection(ray.getStart(), ray.getDir(), ray.getLength())) {
+		if (boxX.lineIntersection(ray.getStart(), ray.getDir(), ray.getLength()).bool) {
 			return MoveDirection.X;
 		}
 		
 		BoundingBox boxY = object.moveArrows.getYBoundingBox(mid);
-		if (boxY.lineIntersection(ray.getStart(), ray.getDir(), ray.getLength())) {
+		if (boxY.lineIntersection(ray.getStart(), ray.getDir(), ray.getLength()).bool) {
 			return MoveDirection.Y;
 		}
 		
 		BoundingBox boxZ = object.moveArrows.getZBoundingBox(mid);
-		if (boxZ.lineIntersection(ray.getStart(), ray.getDir(), ray.getLength())) {
+		if (boxZ.lineIntersection(ray.getStart(), ray.getDir(), ray.getLength()).bool) {
 			return MoveDirection.Z;
 		}
 		
 		
 		BoundingBox boxXZ = object.moveArrows.getXZFaceBoundingBox(mid);
-		if (boxXZ.lineIntersection(ray.getStart(), ray.getDir(), ray.getLength())) {
+		if (boxXZ.lineIntersection(ray.getStart(), ray.getDir(), ray.getLength()).bool) {
 			return MoveDirection.XZ;
 		}
 		
 		BoundingBox boxXY = object.moveArrows.getXYFaceBoundingBox(mid);
-		if (boxXY.lineIntersection(ray.getStart(), ray.getDir(), ray.getLength())) {
+		if (boxXY.lineIntersection(ray.getStart(), ray.getDir(), ray.getLength()).bool) {
 			return MoveDirection.XY;
 		}
 		
 		BoundingBox boxYZ = object.moveArrows.getYZFaceBoundingBox(mid);
-		if (boxYZ.lineIntersection(ray.getStart(), ray.getDir(), ray.getLength())) {
+		if (boxYZ.lineIntersection(ray.getStart(), ray.getDir(), ray.getLength()).bool) {
 			return MoveDirection.YZ;
 		}
 		
@@ -532,6 +553,10 @@ public class Game extends GameLoop {
 	}
 	
 	public void hover(int x, int y) {
+		if (!initReady) {
+			return;
+		}
+		
 		Ray ray = createRay(x, y);
 		
 		if (selected != null) {
@@ -548,9 +573,9 @@ public class Game extends GameLoop {
 			}
 		}
 		
-		List<GameObject> objects = intersects(ray);
+		List<GameObjectAndDistance> objects = intersects(ray);
 		if (!objects.isEmpty()) {
-			hovering = objects.get(0);
+			hovering = objects.get(0).gameObject;
 		} else {
 			synchronized (lock) {
 				hovering = null;

@@ -6,6 +6,7 @@ import perspectiveprojection.interfaces.HasListOfPoints;
 import java.util.Arrays;
 import java.util.List;
 import org.ejml.simple.SimpleMatrix;
+import perspectiveprojection.BooleanAndDistance;
 import perspectiveprojection.enums.BoundingBoxType;
 import perspectiveprojection.util.HelperFunctions;
 
@@ -85,29 +86,33 @@ public class BoundingBox {
 		}
 	}
 	
-	public boolean lineIntersection(Point3D start, Point3D end) {
+	public BooleanAndDistance lineIntersection(Point3D start, Point3D end) {
 		Point3D dir = end.subtract(start);
 		double length = dir.magnitude();
 		
 		return lineIntersection(start, dir.normalize(), length);
 	}
 	
-	public boolean lineIntersectionInfinite(Point3D start, Point3D dir) {
+	public BooleanAndDistance lineIntersectionInfinite(Point3D start, Point3D dir) {
 		return lineIntersection(start, dir.normalize(), Double.MAX_VALUE);
 	}
 	
-	public boolean lineIntersection(Point3D start, Point3D dir, double maxLength) { //dir is a unit vector
+	public BooleanAndDistance lineIntersection(Point3D start, Point3D dir, double maxLength) { //dir is a unit vector
 		if (type == BoundingBoxType.AXIS_ALIGNED_BOX) {
 			return boxIntersection(start, dir, maxLength);
 		} else if (type == BoundingBoxType.SPHERE) {
 			double dist = HelperFunctions.distanceToLineSegment(minPoint, start, start.add(dir.mult(maxLength)));
-			return dist <= size / 2;
+			boolean bool = dist <= size / 2;
+			if (bool) {
+				return new BooleanAndDistance(bool, minPoint.subtract(start).magnitude() / maxLength);
+			}
+			return new BooleanAndDistance(false);
 		}
 		
-		return false;
+		return new BooleanAndDistance(false);
 	}
 	
-	private boolean boxIntersection(Point3D start, Point3D dir, double maxLength) {
+	private BooleanAndDistance boxIntersection(Point3D start, Point3D dir, double maxLength) {
 		double tMin = 0.0f;
 		double tMax = maxLength;
 		
@@ -116,7 +121,7 @@ public class BoundingBox {
 			if (Math.abs(dir.get(i)) < Double.MIN_VALUE) {
 				//Because dir is basically not moving to this direction, we already have to be inside the box in this direction to hit it
 				if (start.get(i) < minPoint.get(i) || start.get(i) > maxPoint.get(i)) { //Start is outside of the box area in this direction
-					return false; //No intersection with the AABB
+					return new BooleanAndDistance(false); //No intersection with the AABB
 				}
 				continue;
 			}
@@ -138,7 +143,7 @@ public class BoundingBox {
 			
 			//Moving tMin or tMax caused them to get past each other, which means line doesn't intersect with the box.
 			if (tMin > tMax) {
-				return false;
+				return new BooleanAndDistance(false);
 			}
 		}
 		
@@ -146,7 +151,7 @@ public class BoundingBox {
 		
 		//start.plus(dir.scale(tMin)); //Point where it enters the box
 		
-		return true;
+		return new BooleanAndDistance(true, tMin);
 	}
 	
 	public static BoundingBox createBoundingBoxAroundPoint(Point3D point, double size, BoundingBoxType type) {
