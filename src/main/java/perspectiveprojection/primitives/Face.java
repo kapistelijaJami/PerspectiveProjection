@@ -56,10 +56,6 @@ public class Face implements Renderable, HasListOfPoints {
 		lightMult = d;
 	}
 	
-	public List<SimpleMatrix> getPoints() {
-		return points;
-	}
-	
 	public int[] getXPoints() {
 		int[] list = new int[points.size()];
 		
@@ -150,6 +146,7 @@ public class Face implements Renderable, HasListOfPoints {
 		for (int i = 0; i < points.size(); i++) {
 			Point3D p = Point3D.fromMatrix(points.get(i));
 			int prev = i - 1;
+			//Directions from p to previous point and to next point
 			Point3D dirPrev = Point3D.fromMatrix(points.get(prev < 0 ? prev + points.size() : prev)).subtract(p);
 			Point3D dirNext = Point3D.fromMatrix(points.get((i + 1) % points.size())).subtract(p);
 			
@@ -159,7 +156,7 @@ public class Face implements Renderable, HasListOfPoints {
 				count++;
 			}
 		}
-		return normal.divide(count).normalize();
+		return normal.divide(count).normalize(); //Average of all calculated normals (if face is a triangle, they all should be same)
 	}
 
 	@Override

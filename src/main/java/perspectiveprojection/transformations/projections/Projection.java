@@ -200,7 +200,7 @@ public abstract class Projection {
 			//Transform face to view space:
 			face = face.applyMatrix(cam.getViewMatrix());
 			//Backface culling:
-			if (face.getFaceNormal().dot(face.getAverageLocation()) >= 0) { //If the normal points to the same direction as camera, we see the back of the face.
+			if (face.getFaceNormal().dot(face.getAverageLocation()) > 0) { //If the normal points to the same direction as camera, we see the back of the face. (These are already in view space)
 				continue;
 			}
 			
@@ -208,7 +208,7 @@ public abstract class Projection {
 			face = face.applyMatrix(projectionMatrix);
 			//Frustum culling (all points outside) (TODO: plane can still be visible even if all points are out):
 			boolean allOutside = true;
-			for (SimpleMatrix p : face.getPoints()) {
+			for (SimpleMatrix p : face.getListOfPoints()) {
 				if (pointInside(p)) {
 					allOutside = false;
 				}

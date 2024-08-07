@@ -47,11 +47,14 @@ public class OBJFileReader {
 						break;
 					case "g": //Group
 						continue; //TODO: not sure if needed
+					case "s": //Smoothing group
+						continue; //TODO: not sure if needed
 					case "mtllib": //Where to find the materials (.mtl file name)
 						continue; //TODO: not sure if needed
 					case "usemtl": //Use material command
 						continue; //TODO: not sure if needed
 					default: //Other stuff
+						System.out.println(s);
 						continue;
 				}
 			}

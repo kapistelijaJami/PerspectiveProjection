@@ -267,17 +267,17 @@ public class MoveArrows extends GameObject {
 	
 	public BoundingBox getXZFaceBoundingBox(Point3D origin) {
 		SimpleMatrix translationMatrix = HelperFunctions.getTranslationMatrix(origin);
-		return BoundingBox.createBoundingBox(getXZFaceWorldSpace(translationMatrix).getPoints());
+		return BoundingBox.createBoundingBox(getXZFaceWorldSpace(translationMatrix).getListOfPoints());
 	}
 	
 	public BoundingBox getXYFaceBoundingBox(Point3D origin) {
 		SimpleMatrix translationMatrix = HelperFunctions.getTranslationMatrix(origin);
-		return BoundingBox.createBoundingBox(getXYFaceWorldSpace(translationMatrix).getPoints());
+		return BoundingBox.createBoundingBox(getXYFaceWorldSpace(translationMatrix).getListOfPoints());
 	}
 	
 	public BoundingBox getYZFaceBoundingBox(Point3D origin) {
 		SimpleMatrix translationMatrix = HelperFunctions.getTranslationMatrix(origin);
-		return BoundingBox.createBoundingBox(getYZFaceWorldSpace(translationMatrix).getPoints());
+		return BoundingBox.createBoundingBox(getYZFaceWorldSpace(translationMatrix).getListOfPoints());
 	}
 	
 	@Override
