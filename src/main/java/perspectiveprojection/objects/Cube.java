@@ -14,7 +14,7 @@ import perspectiveprojection.primitives.Face;
 import perspectiveprojection.primitives.LineSegment;
 import perspectiveprojection.linear_algebra.Point3D;
 
-public class Cube extends GameObject implements Rotateable, Scaleable {
+public class Cube extends GameObject implements Rotateable, Scaleable { //TODO: maybe extend Any3DObject?
 	private final List<Face> faces = new ArrayList<>();
 	public boolean renderDots = false;
 	public boolean renderBoundingBox = false;

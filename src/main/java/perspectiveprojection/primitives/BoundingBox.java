@@ -18,7 +18,7 @@ import perspectiveprojection.util.HelperFunctions;
 public class BoundingBox {
 	public Point3D minPoint;
 	public Point3D maxPoint; //If sphere, min and max are the same
-	public double size; //Spherical size, even for a box shaped bounds, diameter
+	public double size; //Spherical size (diameter), even for a box shaped bounds (corners diagonally)
 	public BoundingBoxType type;
 	
 	public BoundingBox(Point3D minPoint, Point3D maxPoint) {

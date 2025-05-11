@@ -91,6 +91,7 @@ public class Game extends GameLoop {
 		obj.rotate(HelperFunctions.getRotationMatrixAroundX4By4(-90));*/
 		obj = Any3DObject.createFromFile("D:\\Tiedostot\\3D Printing stuff\\Extended wheel.obj", 10);
 		obj.rotate(HelperFunctions.getRotationMatrixAroundY4By4(180));
+		
 		obj.setLocation(new Point3D(0, 0, 500));
 		
 		/*cube.rotate(HelperFunctions.getRotationMatrixAroundY4By4(45));
@@ -352,7 +353,7 @@ public class Game extends GameLoop {
 		for (HasBoundingBox object : objects) {
 			BoundingBox bounds = object.getBoundingBox();
 			BooleanAndDistance boolAndT = bounds.lineIntersection(ray.getStart(), ray.getEnd());
-			if (boolAndT.bool) {				//TODO: get t value and keep track of closest and return them all in an ordered list
+			if (boolAndT.bool) {
 				if (object instanceof GameObject) {
 					GameObject obj = (GameObject) object;
 					list.add(new GameObjectAndDistance(obj, boolAndT.t));

@@ -164,6 +164,12 @@ public class Point3D {
 		return this;
 	}
 	
+	/**
+	 * Normalizes the vector, so its length is 1.
+	 * Creates a new copy, doesn't update this point.
+	 * Returns the new copy.
+	 * @return 
+	 */
 	public Point3D normalized() {
 		double magnitude = magnitude();
 		return new Point3D(x / magnitude, y / magnitude, z / magnitude);

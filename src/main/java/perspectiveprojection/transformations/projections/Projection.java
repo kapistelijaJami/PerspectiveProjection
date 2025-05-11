@@ -57,12 +57,11 @@ public abstract class Projection {
 	public SimpleMatrix projectToClipSpace(SimpleMatrix point) { //point is in world space
 		//SimpleMatrix projectionViewMatrix = projectionMatrix.mult(cam.getViewMatrix());
 		
-		SimpleMatrix projectionViewMatrix = projectionMatrix;
 		point = cam.getViewMatrix().mult(point);
 		
 		//From world space to viewSpace to clipSpace with one matrix:
 		//res is now in clip space. We still have to do perspective divide, to normalize the coordinates to normalized device coordinates (NDC)
-		SimpleMatrix clipSpace = projectionViewMatrix.mult(point);
+		SimpleMatrix clipSpace = projectionMatrix.mult(point);
 		
 		return clipSpace;
 	}
@@ -217,7 +216,7 @@ public abstract class Projection {
 				continue;
 			}
 			
-			//TODO: do frustum clipping here (should remove the above after this is done)
+			//TODO: do frustum clipping here (should remove the above after this is done - Actually frustum culling is when the whole object is outside of view frustum, it should be done even earlier than this)
 			
 			face = ViewportTransformation.fromClipSpaceToScreenSpace(face, Game.WIDTH, Game.HEIGHT);
 			transformed.add(face);
@@ -229,6 +228,11 @@ public abstract class Projection {
 		return pointInside(a) && pointInside(b);
 	}
 	
+	/**
+	 * Point is already in clip space, so it just checks compared to the w.
+	 * @param a
+	 * @return 
+	 */
 	private static boolean pointInside(SimpleMatrix a) {
 		return componentInside(a.get(0), a.get(3)) && componentInside(a.get(1), a.get(3)) && a.get(2) >= 0 && a.get(2) <= a.get(3);
 	}
@@ -245,7 +249,14 @@ public abstract class Projection {
 		return cam.getViewMatrix();
 	}
 	
+	/**
+	 * Uses the Gribb & Hartmann method: https://web.archive.org/web/20210226045225/http://www.cs.otago.ac.nz/postgrads/alexis/planeExtraction.pdf
+	 */
 	protected void calculateViewingFrustumFromProjectionMatrix() {
+		//TODO: Might not need this in clip space, since frustum culling for whole objects should happen in view space.
+		//Also, putting these through the normalTransform (inverse transpose of projection matrix) just makes them normal (0, 0, 1) etc. vectors,
+		//since that's what they should be in clip space.
+		
 		//This transforms the normals correctly from view space to clip space, since they are not points, but directions.
 		SimpleMatrix normalTransform = projectionMatrix.invert().transpose(); //Inverse and transpose order doesn't matter.
 		
@@ -258,6 +269,14 @@ public abstract class Projection {
 		
 		SimpleMatrix nearNormal = normalTransform.mult(projectionMatrix.extractVector(true, 2).transpose()); //different cause z is from 0 to 1, just the third row
 		SimpleMatrix farNormal = normalTransform.mult(projectionMatrix.extractVector(true, 3).minus(projectionMatrix.extractVector(true, 2)).transpose());
+		
+		//Normalization just in case:
+		leftNormal = Point3D.fromMatrix(leftNormal).normalize().asHomogeneousVector();
+		rightNormal = Point3D.fromMatrix(rightNormal).normalize().asHomogeneousVector();
+		bottomNormal = Point3D.fromMatrix(bottomNormal).normalize().asHomogeneousVector();
+		topNormal = Point3D.fromMatrix(topNormal).normalize().asHomogeneousVector();
+		nearNormal = Point3D.fromMatrix(nearNormal).normalize().asHomogeneousVector();
+		farNormal = Point3D.fromMatrix(farNormal).normalize().asHomogeneousVector();
 		
 		//Viewing frustum in clip space:
 		frustum = new Frustum(topNormal, bottomNormal, leftNormal, rightNormal, nearNormal, farNormal);

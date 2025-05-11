@@ -27,7 +27,7 @@ public class OBJFileReader {
 				String[] parts = s.split(" ");
 				
 				switch (parts[0]) {
-					case "v": //Normal vertex
+					case "v": //Vertex
 						vertices.add(new Point3D(Double.parseDouble(parts[1]), Double.parseDouble(parts[2]), Double.parseDouble(parts[3])));
 						break;
 					case "vt": //UV vertex (vertex texture)

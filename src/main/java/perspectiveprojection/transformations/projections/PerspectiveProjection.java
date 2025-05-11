@@ -16,11 +16,11 @@ Projection pipeline goes like this:
 	
 	First we have the object space / local space / model space, which are the points of the object relative to its local origin.
 	Then we have the world space, which are points of the objects relative to the world origo.
-		To get to the world space, you just apply translation by the location of the object's local origin, called model transform,
+		To get to the world space, you just apply translation by the location of the object's local origin, called model transformation (apply model matrix),
 		or just keep track of this in the first place.
 		It could also do rotations and scaling to the whole object.
 	Then we have view space AKA eye space or camera space, which are the points relative to the camera location. This is the POV of the camera.
-		To get to the view space, you apply viewMatrix. It just moves all the points so that camera is at the origo, and
+		To get to the view space, you apply viewMatrix (view transformation). It just moves all the points so that camera is at the origo, and
 		rotates all the points around the camera so that the viewing direction is how the camera would see it.
 		Camera looks towards the negative Z direction. So points in front of the camera will have negative z values.
 	Then we have clip space, which are the points in homogeneous coordinates, not yet divided by w.
@@ -67,7 +67,7 @@ public class PerspectiveProjection extends Projection {
 		double A = f / (n - f);
 		double B = n * A; //was B = n * f / (n - f)
 		
-		double fov = Game.FOV; //def: 60, vertical fov (If you want to use horizontal fov, you just calculate right first, and either divide the right with horizontal aspect, or multiply it with vertical aspect to get top.)
+		double fov = Game.FOV; //def: 60, vertical fov (If you want to use horizontal fov, you just calculate right first (so before top), and either divide the right with horizontal aspect, or multiply it with vertical aspect to get top.)
 		double aspect = Game.WIDTH / (double) Game.HEIGHT; //horizontal aspect ratio (only used to calculate the right distance from the vertical fov)
 		
 		//Calculate top and right (from the center of the near plane to the edge) with the field of view and aspect ratio:
